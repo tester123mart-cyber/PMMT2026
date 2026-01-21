@@ -99,36 +99,42 @@ export default function AdminPage() {
 
 function ClinicDaysTab() {
     const { state, dispatch } = useApp();
-    const [editingDay, setEditingDay] = useState<ClinicDay | null>(null);
+    const [editingDateId, setEditingDateId] = useState<string | null>(null);
+    const [editingNameId, setEditingNameId] = useState<string | null>(null);
+    const [tempDate, setTempDate] = useState({ day: '', month: '', year: '' });
+    const [tempName, setTempName] = useState('');
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [newDay, setNewDay] = useState({ name: '', day: '', month: '', year: '' });
-
-    const handleSaveEdit = () => {
-        if (!editingDay) return;
-        dispatch({ type: 'UPDATE_CLINIC_DAY', payload: editingDay });
-        setEditingDay(null);
-    };
-
-    const handleEditDateChange = (field: 'day' | 'month' | 'year', value: string) => {
-        if (!editingDay) return;
-        const [year, month, day] = editingDay.date.split('-');
-        let newDate = editingDay.date;
-
-        if (field === 'day') {
-            const d = value.padStart(2, '0');
-            newDate = `${year}-${month}-${d}`;
-        } else if (field === 'month') {
-            const m = value.padStart(2, '0');
-            newDate = `${year}-${m}-${day}`;
-        } else {
-            newDate = `${value}-${month}-${day}`;
-        }
-
-        setEditingDay({ ...editingDay, date: newDate });
-    };
 
     const getDateParts = (dateStr: string) => {
         const [year, month, day] = dateStr.split('-');
-        return { day: parseInt(day) || '', month: parseInt(month) || '', year: year || '' };
+        return { day: parseInt(day) || 0, month: parseInt(month) || 0, year: year || '' };
+    };
+
+    const startEditingName = (day: ClinicDay) => {
+        setEditingNameId(day.id);
+        setTempName(day.name);
+        setEditingDateId(null);
+    };
+
+    const saveNameEdit = (day: ClinicDay) => {
+        if (tempName.trim()) {
+            dispatch({ type: 'UPDATE_CLINIC_DAY', payload: { ...day, name: tempName.trim() } });
+        }
+        setEditingNameId(null);
+    };
+
+    const startEditingDate = (day: ClinicDay) => {
+        const parts = getDateParts(day.date);
+        setEditingDateId(day.id);
+        setTempDate({ day: parts.day.toString(), month: parts.month.toString(), year: parts.year });
+        setEditingNameId(null);
+    };
+
+    const saveDateEdit = (day: ClinicDay) => {
+        const date = `${tempDate.year}-${tempDate.month.padStart(2, '0')}-${tempDate.day.padStart(2, '0')}`;
+        dispatch({ type: 'UPDATE_CLINIC_DAY', payload: { ...day, date } });
+        setEditingDateId(null);
     };
 
     const handleAddDay = () => {
@@ -155,7 +161,6 @@ function ClinicDaysTab() {
     };
 
     const handleDeleteDay = (dayId: string) => {
-        if (!confirm('Are you sure you want to delete this clinic day?')) return;
         dispatch({
             type: 'IMPORT_STATE',
             payload: {
@@ -163,93 +168,134 @@ function ClinicDaysTab() {
                 clinicDays: state.clinicDays.filter(d => d.id !== dayId),
             },
         });
+        setDeletingId(null);
     };
 
     return (
         <div className="glass-card p-6 space-y-6">
-            <h2 className="text-lg font-semibold">Clinic Days</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Clinic Days</h2>
+                <span className="text-sm text-[var(--text-muted)]">{state.clinicDays.length} days configured</span>
+            </div>
 
             {/* Existing Days */}
-            <div className="space-y-3">
+            <div className="space-y-2">
                 {state.clinicDays.map(day => {
-                    const isEditing = editingDay?.id === day.id;
-                    const displayDay = isEditing ? editingDay : day;
-                    const dateParts = getDateParts(displayDay.date);
+                    const isEditingName = editingNameId === day.id;
+                    const isEditingDate = editingDateId === day.id;
+                    const isDeleting = deletingId === day.id;
 
                     return (
-                        <div key={day.id} className="p-4 bg-[var(--bg-secondary)] rounded-lg">
-                            {isEditing ? (
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs text-[var(--text-muted)] mb-1">Name</label>
-                                        <input
-                                            type="text"
-                                            value={displayDay.name}
-                                            onChange={(e) => setEditingDay({ ...displayDay, name: e.target.value })}
-                                            className="input-field w-full"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs text-[var(--text-muted)] mb-1">Date</label>
-                                        <div className="flex gap-2 items-center">
-                                            <input
-                                                type="number"
-                                                value={dateParts.day}
-                                                onChange={(e) => handleEditDateChange('day', e.target.value)}
-                                                placeholder="DD"
-                                                min="1"
-                                                max="31"
-                                                className="input-field w-16 text-center"
-                                            />
-                                            <span className="text-[var(--text-muted)]">/</span>
-                                            <input
-                                                type="number"
-                                                value={dateParts.month}
-                                                onChange={(e) => handleEditDateChange('month', e.target.value)}
-                                                placeholder="MM"
-                                                min="1"
-                                                max="12"
-                                                className="input-field w-16 text-center"
-                                            />
-                                            <span className="text-[var(--text-muted)]">/</span>
-                                            <input
-                                                type="number"
-                                                value={dateParts.year}
-                                                onChange={(e) => handleEditDateChange('year', e.target.value)}
-                                                placeholder="YYYY"
-                                                min="2024"
-                                                max="2030"
-                                                className="input-field w-24 text-center"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 pt-2">
-                                        <button onClick={handleSaveEdit} className="btn-primary">
-                                            Save
+                        <div key={day.id} className={`p-4 bg-[var(--bg-secondary)] rounded-lg transition-all ${isDeleting ? 'opacity-50' : ''}`}>
+                            {isDeleting ? (
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[var(--text-muted)]">Delete "{day.name}"?</span>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleDeleteDay(day.id)} className="btn-danger text-sm px-3 py-1">
+                                            Confirm
                                         </button>
-                                        <button onClick={() => setEditingDay(null)} className="btn-secondary">
+                                        <button onClick={() => setDeletingId(null)} className="btn-secondary text-sm px-3 py-1">
                                             Cancel
                                         </button>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-4">
+                                    {/* Name - Click to edit */}
                                     <div className="flex-1">
-                                        <div className="font-medium">{day.name}</div>
-                                        <div className="text-sm text-[var(--text-muted)]">
-                                            {new Date(day.date).toLocaleDateString('en-AU', {
-                                                weekday: 'long',
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            })}
-                                        </div>
+                                        {isEditingName ? (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={tempName}
+                                                    onChange={(e) => setTempName(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') saveNameEdit(day);
+                                                        if (e.key === 'Escape') setEditingNameId(null);
+                                                    }}
+                                                    className="input-field flex-1"
+                                                    autoFocus
+                                                />
+                                                <button onClick={() => saveNameEdit(day)} className="text-green-400 hover:text-green-300">
+                                                    ✓
+                                                </button>
+                                                <button onClick={() => setEditingNameId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                onClick={() => startEditingName(day)}
+                                                className="cursor-pointer hover:text-blue-400 transition-colors"
+                                                title="Click to rename"
+                                            >
+                                                <div className="font-medium flex items-center gap-2">
+                                                    {day.name}
+                                                    <span className="text-xs text-[var(--text-muted)] opacity-0 hover:opacity-100">✏️</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Date - Click to edit */}
+                                        {isEditingDate ? (
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <input
+                                                    type="number"
+                                                    value={tempDate.day}
+                                                    onChange={(e) => setTempDate({ ...tempDate, day: e.target.value })}
+                                                    placeholder="DD"
+                                                    className="input-field w-14 text-center text-sm"
+                                                    min="1"
+                                                    max="31"
+                                                />
+                                                <span className="text-[var(--text-muted)]">/</span>
+                                                <input
+                                                    type="number"
+                                                    value={tempDate.month}
+                                                    onChange={(e) => setTempDate({ ...tempDate, month: e.target.value })}
+                                                    placeholder="MM"
+                                                    className="input-field w-14 text-center text-sm"
+                                                    min="1"
+                                                    max="12"
+                                                />
+                                                <span className="text-[var(--text-muted)]">/</span>
+                                                <input
+                                                    type="number"
+                                                    value={tempDate.year}
+                                                    onChange={(e) => setTempDate({ ...tempDate, year: e.target.value })}
+                                                    placeholder="YYYY"
+                                                    className="input-field w-20 text-center text-sm"
+                                                />
+                                                <button onClick={() => saveDateEdit(day)} className="text-green-400 hover:text-green-300 text-sm">
+                                                    Save
+                                                </button>
+                                                <button onClick={() => setEditingDateId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                onClick={() => startEditingDate(day)}
+                                                className="text-sm text-[var(--text-muted)] cursor-pointer hover:text-blue-400 transition-colors"
+                                                title="Click to change date"
+                                            >
+                                                {new Date(day.date).toLocaleDateString('en-AU', {
+                                                    weekday: 'long',
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
-                                    <button onClick={() => setEditingDay(day)} className="btn-secondary">
-                                        Edit
-                                    </button>
-                                    <button onClick={() => handleDeleteDay(day.id)} className="text-red-400 hover:text-red-300 text-sm">
-                                        Delete
+
+                                    {/* Delete button */}
+                                    <button
+                                        onClick={() => setDeletingId(day.id)}
+                                        className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-2"
+                                        title="Delete"
+                                    >
+                                        🗑️
                                     </button>
                                 </div>
                             )}
