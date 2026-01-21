@@ -19,12 +19,12 @@ export default function Header() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
                         <span className="text-2xl">🏥</span>
-                        <span className="font-bold text-lg bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                        <span className="font-bold text-lg bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
                             PMMT
                         </span>
                     </Link>
 
-                    {/* Navigation */}
+                    {/* Navigation - Main tabs only */}
                     <nav className="hidden md:flex items-center gap-1">
                         <Link
                             href="/"
@@ -47,17 +47,10 @@ export default function Header() {
                             <span>📝</span>
                             <span>Operations</span>
                         </Link>
-                        <Link
-                            href="/admin"
-                            className={`nav-link ${isAdmin ? 'nav-link-active' : ''}`}
-                        >
-                            <span>⚙️</span>
-                            <span>Admin</span>
-                        </Link>
                     </nav>
 
-                    {/* User Menu */}
-                    <div className="flex items-center gap-4">
+                    {/* User Menu with subtle Admin link */}
+                    <div className="flex items-center gap-3">
                         {state.currentUser && (
                             <>
                                 <div className="hidden sm:block text-right">
@@ -68,6 +61,20 @@ export default function Header() {
                                         {state.currentUser.email}
                                     </div>
                                 </div>
+
+                                {/* Subtle separator */}
+                                <div className="h-6 w-px bg-[var(--border-subtle)]" />
+
+                                {/* Admin link - subtle, next to sign out */}
+                                <Link
+                                    href="/admin"
+                                    className={`text-xs hover:text-[var(--text-primary)] transition-colors ${isAdmin ? 'text-blue-500' : 'text-[var(--text-muted)]'
+                                        }`}
+                                    title="Admin Settings"
+                                >
+                                    ⚙️
+                                </Link>
+
                                 <button
                                     onClick={logout}
                                     className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -79,7 +86,7 @@ export default function Header() {
                     </div>
                 </div>
 
-                {/* Mobile Navigation */}
+                {/* Mobile Navigation - without Admin */}
                 <nav className="md:hidden flex items-center gap-1 pb-3 overflow-x-auto">
                     <Link
                         href="/"
@@ -102,15 +109,9 @@ export default function Header() {
                         <span>📝</span>
                         <span className="text-sm">Ops</span>
                     </Link>
-                    <Link
-                        href="/admin"
-                        className={`nav-link flex-shrink-0 ${isAdmin ? 'nav-link-active' : ''}`}
-                    >
-                        <span>⚙️</span>
-                        <span className="text-sm">Admin</span>
-                    </Link>
                 </nav>
             </div>
         </header>
     );
 }
+
