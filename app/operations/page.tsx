@@ -3,19 +3,17 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
-import ShiftDataEntry from '@/components/operations/ShiftDataEntry';
-import DataFeedback from '@/components/operations/DataFeedback';
 import { ShiftId } from '@/lib/types';
-import { SHIFTS } from '@/lib/data';
+import { calculatePatientCapacity } from '@/lib/calculations';
+import { getClinicalRoles, SHIFTS } from '@/lib/data';
 
-export default function OperationsPage() {
+export default function DataViewPage() {
     const { state } = useApp();
     const [selectedClinicDayId, setSelectedClinicDayId] = useState<string>(
         state.clinicDays[0]?.id || ''
     );
-    const [selectedShiftId, setSelectedShiftId] = useState<ShiftId>('morning1');
-    const [showFeedback, setShowFeedback] = useState(false);
 
+    const clinicalRoles = getClinicalRoles();
     const selectedClinicDay = state.clinicDays.find(d => d.id === selectedClinicDayId);
 
     return (
@@ -24,15 +22,17 @@ export default function OperationsPage() {
 
             <main className="container py-6">
                 {/* Page Header */}
-                <div className="page-header">
-                    <h1 className="page-title">Live Operations</h1>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        Data View
+                    </h1>
                     <p className="text-sm text-[var(--text-muted)] mt-1">
-                        Record actual clinic data to improve future planning
+                        Flow rate analysis and capacity projections
                     </p>
                 </div>
 
-                {/* Selectors */}
-                <div className="flex flex-wrap gap-4 mb-6">
+                {/* Day Selector */}
+                <div className="mb-6">
                     <select
                         value={selectedClinicDayId}
                         onChange={(e) => setSelectedClinicDayId(e.target.value)}
@@ -48,159 +48,143 @@ export default function OperationsPage() {
                             </option>
                         ))}
                     </select>
+                </div>
 
-                    <div className="flex gap-2">
-                        {SHIFTS.map(shift => (
-                            <button
-                                key={shift.id}
-                                onClick={() => setSelectedShiftId(shift.id)}
-                                className={`
-                  px-4 py-2 rounded-lg font-medium transition-all
-                  ${selectedShiftId === shift.id
-                                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                                        : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
-                                    }
-                `}
-                            >
-                                {shift.name.replace(' Shift', '')}
-                            </button>
-                        ))}
+                {/* Flow Rate Analysis */}
+                <section className="animate-fade-in">
+                    <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2 mb-4">
+                        <span className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">📊</span>
+                        Flow Rate Analysis
+                    </h2>
+
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        {/* By Role */}
+                        <div className="p-6 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                            <h3 className="font-medium text-[var(--text-primary)] mb-4">Current Flow Rates by Role</h3>
+                            <div className="space-y-4">
+                                {clinicalRoles.map(role => {
+                                    const flowRate = state.flowRates.find(f => f.roleId === role.id);
+                                    const progressWidth = flowRate
+                                        ? Math.min((flowRate.patientsPerHourPerStaff / 10) * 100, 100)
+                                        : 0;
+
+                                    return (
+                                        <div key={role.id}>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xl">{role.icon}</span>
+                                                    <span className="text-sm font-medium">{role.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg font-bold text-blue-500">
+                                                        {flowRate?.patientsPerHourPerStaff ?? '-'}
+                                                    </span>
+                                                    <span className="text-xs text-[var(--text-muted)]">/hr/staff</span>
+                                                </div>
+                                            </div>
+                                            <div className="h-2 rounded-full bg-[var(--bg-card)] overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+                                                    style={{ width: `${progressWidth}%` }}
+                                                />
+                                            </div>
+                                            {flowRate?.source === 'actual' && (
+                                                <div className="text-xs text-green-600 mt-1">✓ Updated from actual data</div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Capacity Projections */}
+                        <div className="p-6 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                            <h3 className="font-medium text-[var(--text-primary)] mb-4">Capacity Projections</h3>
+                            {selectedClinicDay ? (
+                                <div className="space-y-4">
+                                    {SHIFTS.map(shift => {
+                                        let totalCapacity = 0;
+                                        const roleCapacities: { role: string; icon: string; capacity: number }[] = [];
+
+                                        clinicalRoles.forEach(role => {
+                                            const capacity = calculatePatientCapacity(state, selectedClinicDayId, shift.id, role.id);
+                                            totalCapacity += capacity.projectedPatients;
+                                            roleCapacities.push({
+                                                role: role.name,
+                                                icon: role.icon,
+                                                capacity: capacity.projectedPatients
+                                            });
+                                        });
+
+                                        return (
+                                            <div key={shift.id} className="p-4 rounded-xl bg-[var(--bg-card)]">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="font-medium">{shift.name}</div>
+                                                    <div className="text-xl font-bold text-purple-500">{totalCapacity} pts</div>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {roleCapacities.map(rc => (
+                                                        <div key={rc.role} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--bg-secondary)] text-xs">
+                                                            <span>{rc.icon}</span>
+                                                            <span>{rc.capacity}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-[var(--text-muted)]">
+                                    <div className="text-4xl mb-2">📅</div>
+                                    <p>Select a clinic day to view projections</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Summary Stats */}
+                <section className="mt-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+                    <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2 mb-4">
+                        <span className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">📈</span>
+                        Summary Statistics
+                    </h2>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                            <div className="text-2xl font-bold text-blue-500">{state.participants.length}</div>
+                            <div className="text-xs text-[var(--text-muted)]">Total Participants</div>
+                        </div>
+                        <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                            <div className="text-2xl font-bold text-purple-500">{state.assignments.length}</div>
+                            <div className="text-xs text-[var(--text-muted)]">Total Assignments</div>
+                        </div>
+                        <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                            <div className="text-2xl font-bold text-green-500">{state.clinicDays.length}</div>
+                            <div className="text-xs text-[var(--text-muted)]">Clinic Days</div>
+                        </div>
+                        <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                            <div className="text-2xl font-bold text-orange-500">{clinicalRoles.length}</div>
+                            <div className="text-xs text-[var(--text-muted)]">Clinical Roles</div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Info Banner */}
+                <div className="mt-8 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <div className="flex items-start gap-3">
+                        <span className="text-xl">💡</span>
+                        <div className="text-sm text-[var(--text-secondary)]">
+                            <strong className="text-[var(--text-primary)]">About Flow Rates:</strong>
+                            <span className="ml-1">
+                                Flow rates represent how many patients each staff member can serve per hour.
+                                These baseline rates are used to calculate projected patient capacity for each shift.
+                            </span>
+                        </div>
                     </div>
                 </div>
-
-                {/* Main Content Grid */}
-                <div className="grid lg:grid-cols-2 gap-6">
-                    {/* Data Entry Form */}
-                    <section className="animate-fade-in">
-                        <h2 className="section-title flex items-center gap-2 mb-4">
-                            <span className="text-xl">📝</span>
-                            Record Shift Data
-                        </h2>
-                        {selectedClinicDayId && (
-                            <ShiftDataEntry
-                                clinicDayId={selectedClinicDayId}
-                                shiftId={selectedShiftId}
-                                onSave={() => setShowFeedback(true)}
-                            />
-                        )}
-                    </section>
-
-                    {/* Data Feedback / Results */}
-                    <section className="animate-fade-in" style={{ animationDelay: '100ms' }}>
-                        <h2 className="section-title flex items-center gap-2 mb-4">
-                            <span className="text-xl">📊</span>
-                            Flow Rate Analysis
-                        </h2>
-                        {selectedClinicDayId && (
-                            <DataFeedback
-                                clinicDayId={selectedClinicDayId}
-                                shiftId={selectedShiftId}
-                            />
-                        )}
-                    </section>
-                </div>
-
-                {/* Tickets Management */}
-                {selectedClinicDay && (
-                    <section className="mt-8 animate-slide-up" style={{ animationDelay: '200ms' }}>
-                        <h2 className="section-title flex items-center gap-2 mb-4">
-                            <span className="text-xl">🎫</span>
-                            Ticket Management
-                        </h2>
-                        <TicketManager clinicDay={selectedClinicDay} />
-                    </section>
-                )}
             </main>
-        </div>
-    );
-}
-
-function TicketManager({ clinicDay }: { clinicDay: NonNullable<ReturnType<typeof import('@/context/AppContext').useApp>['state']['clinicDays'][0]> }) {
-    const { state, dispatch } = useApp();
-    const [ticketInput, setTicketInput] = useState(clinicDay.patientTicketsIssued.toString());
-    const [actualInput, setActualInput] = useState(clinicDay.actualPatientsServed?.toString() || '');
-
-    const handleUpdateTickets = () => {
-        const tickets = parseInt(ticketInput) || 0;
-        dispatch({
-            type: 'UPDATE_CLINIC_DAY',
-            payload: { ...clinicDay, patientTicketsIssued: tickets }
-        });
-    };
-
-    const handleUpdateActual = () => {
-        const actual = parseInt(actualInput) || 0;
-        dispatch({
-            type: 'UPDATE_CLINIC_DAY',
-            payload: { ...clinicDay, actualPatientsServed: actual }
-        });
-    };
-
-    return (
-        <div className="glass-card p-6">
-            <div className="grid md:grid-cols-2 gap-6">
-                {/* Tickets Issued */}
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                        Patient Tickets Issued
-                    </label>
-                    <div className="flex gap-2">
-                        <input
-                            type="number"
-                            value={ticketInput}
-                            onChange={(e) => setTicketInput(e.target.value)}
-                            min="0"
-                            className="input-field flex-1"
-                        />
-                        <button onClick={handleUpdateTickets} className="btn-primary">
-                            Update
-                        </button>
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)] mt-2">
-                        Total number of patient tickets issued for this clinic day
-                    </p>
-                </div>
-
-                {/* Actual Patients Served */}
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                        Actual Patients Served
-                    </label>
-                    <div className="flex gap-2">
-                        <input
-                            type="number"
-                            value={actualInput}
-                            onChange={(e) => setActualInput(e.target.value)}
-                            min="0"
-                            className="input-field flex-1"
-                            placeholder="Enter after clinic ends"
-                        />
-                        <button onClick={handleUpdateActual} className="btn-primary">
-                            Update
-                        </button>
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)] mt-2">
-                        Total patients actually seen (enter after clinic day ends)
-                    </p>
-                </div>
-            </div>
-
-            {/* Comparison */}
-            {clinicDay.actualPatientsServed !== undefined && clinicDay.patientTicketsIssued > 0 && (
-                <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[var(--text-secondary)]">Ticket utilization:</span>
-                        <span className="font-bold text-lg">
-                            {Math.round((clinicDay.actualPatientsServed / clinicDay.patientTicketsIssued) * 100)}%
-                        </span>
-                    </div>
-                    {clinicDay.actualPatientsServed < clinicDay.patientTicketsIssued && (
-                        <p className="text-xs text-yellow-400 mt-2">
-                            ⚠️ {clinicDay.patientTicketsIssued - clinicDay.actualPatientsServed} tickets unused (no-shows or early closure)
-                        </p>
-                    )}
-                </div>
-            )}
         </div>
     );
 }

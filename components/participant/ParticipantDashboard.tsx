@@ -36,17 +36,17 @@ export default function ParticipantDashboard() {
 
             <main className="container py-6">
                 {/* Welcome Banner */}
-                <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
                             {state.currentUser?.name?.charAt(0) || '?'}
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-[var(--text-primary)]">
-                                Welcome, {state.currentUser?.name?.split(' ')[0] || 'Participant'}!
+                            <h1 className="text-lg font-semibold text-[var(--text-primary)]">
+                                Welcome, {state.currentUser?.name?.split(' ')[0] || 'Participant'}
                             </h1>
-                            <p className="text-sm text-[var(--text-secondary)]">
-                                Manage your shifts and see what&apos;s happening today
+                            <p className="text-sm text-[var(--text-muted)] italic">
+                                &quot;Do everything in love.&quot; — 1 Corinthians 16:14
                             </p>
                         </div>
                     </div>
