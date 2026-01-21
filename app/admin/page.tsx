@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
+import DatePicker from '@/components/shared/DatePicker';
 import { exportData, importData, clearAllData } from '@/lib/storage';
 import { ClinicDay, Participant } from '@/lib/types';
 
@@ -99,53 +100,39 @@ export default function AdminPage() {
 
 function ClinicDaysTab() {
     const { state, dispatch } = useApp();
-    const [editingDateId, setEditingDateId] = useState<string | null>(null);
-    const [editingNameId, setEditingNameId] = useState<string | null>(null);
-    const [tempDate, setTempDate] = useState({ day: '', month: '', year: '' });
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
     const [tempName, setTempName] = useState('');
     const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [newDay, setNewDay] = useState({ name: '', day: '', month: '', year: '' });
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newDayName, setNewDayName] = useState('');
+    const [newDayDate, setNewDayDate] = useState('');
+    const [showNewDatePicker, setShowNewDatePicker] = useState(false);
 
-    const getDateParts = (dateStr: string) => {
-        const [year, month, day] = dateStr.split('-');
-        return { day: parseInt(day) || 0, month: parseInt(month) || 0, year: year || '' };
-    };
-
-    const startEditingName = (day: ClinicDay) => {
-        setEditingNameId(day.id);
+    const startEditing = (day: ClinicDay) => {
+        setEditingId(day.id);
         setTempName(day.name);
-        setEditingDateId(null);
     };
 
-    const saveNameEdit = (day: ClinicDay) => {
+    const saveEdit = (day: ClinicDay) => {
         if (tempName.trim()) {
             dispatch({ type: 'UPDATE_CLINIC_DAY', payload: { ...day, name: tempName.trim() } });
         }
-        setEditingNameId(null);
+        setEditingId(null);
     };
 
-    const startEditingDate = (day: ClinicDay) => {
-        const parts = getDateParts(day.date);
-        setEditingDateId(day.id);
-        setTempDate({ day: parts.day.toString(), month: parts.month.toString(), year: parts.year });
-        setEditingNameId(null);
-    };
-
-    const saveDateEdit = (day: ClinicDay) => {
-        const date = `${tempDate.year}-${tempDate.month.padStart(2, '0')}-${tempDate.day.padStart(2, '0')}`;
-        dispatch({ type: 'UPDATE_CLINIC_DAY', payload: { ...day, date } });
-        setEditingDateId(null);
+    const updateDate = (day: ClinicDay, newDate: string) => {
+        dispatch({ type: 'UPDATE_CLINIC_DAY', payload: { ...day, date: newDate } });
+        setShowDatePicker(null);
     };
 
     const handleAddDay = () => {
-        if (!newDay.name || !newDay.day || !newDay.month || !newDay.year) return;
-
-        const date = `${newDay.year}-${newDay.month.padStart(2, '0')}-${newDay.day.padStart(2, '0')}`;
+        if (!newDayName || !newDayDate) return;
 
         const newClinicDay: ClinicDay = {
             id: `day-${Date.now()}`,
-            name: newDay.name,
-            date: date,
+            name: newDayName,
+            date: newDayDate,
             isActive: false,
             patientTicketsIssued: 0,
         };
@@ -154,10 +141,12 @@ function ClinicDaysTab() {
             type: 'IMPORT_STATE',
             payload: {
                 ...state,
-                clinicDays: [...state.clinicDays, newClinicDay],
+                clinicDays: [...state.clinicDays, newClinicDay].sort((a, b) => a.date.localeCompare(b.date)),
             },
         });
-        setNewDay({ name: '', day: '', month: '', year: '' });
+        setNewDayName('');
+        setNewDayDate('');
+        setShowAddForm(false);
     };
 
     const handleDeleteDay = (dayId: string) => {
@@ -171,185 +160,181 @@ function ClinicDaysTab() {
         setDeletingId(null);
     };
 
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('en-AU', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+        });
+    };
+
     return (
         <div className="glass-card p-6 space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Clinic Days</h2>
-                <span className="text-sm text-[var(--text-muted)]">{state.clinicDays.length} days configured</span>
+                <div>
+                    <h2 className="text-lg font-semibold">Clinic Days</h2>
+                    <p className="text-sm text-[var(--text-muted)]">{state.clinicDays.length} days configured</p>
+                </div>
+                <button
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="btn-primary"
+                >
+                    + Add Day
+                </button>
             </div>
 
-            {/* Existing Days */}
-            <div className="space-y-2">
-                {state.clinicDays.map(day => {
-                    const isEditingName = editingNameId === day.id;
-                    const isEditingDate = editingDateId === day.id;
-                    const isDeleting = deletingId === day.id;
-
-                    return (
-                        <div key={day.id} className={`p-4 bg-[var(--bg-secondary)] rounded-lg transition-all ${isDeleting ? 'opacity-50' : ''}`}>
-                            {isDeleting ? (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[var(--text-muted)]">Delete "{day.name}"?</span>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => handleDeleteDay(day.id)} className="btn-danger text-sm px-3 py-1">
-                                            Confirm
-                                        </button>
-                                        <button onClick={() => setDeletingId(null)} className="btn-secondary text-sm px-3 py-1">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-4">
-                                    {/* Name - Click to edit */}
-                                    <div className="flex-1">
-                                        {isEditingName ? (
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={tempName}
-                                                    onChange={(e) => setTempName(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') saveNameEdit(day);
-                                                        if (e.key === 'Escape') setEditingNameId(null);
-                                                    }}
-                                                    className="input-field flex-1"
-                                                    autoFocus
-                                                />
-                                                <button onClick={() => saveNameEdit(day)} className="text-green-400 hover:text-green-300">
-                                                    ✓
-                                                </button>
-                                                <button onClick={() => setEditingNameId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                onClick={() => startEditingName(day)}
-                                                className="cursor-pointer hover:text-blue-400 transition-colors"
-                                                title="Click to rename"
-                                            >
-                                                <div className="font-medium flex items-center gap-2">
-                                                    {day.name}
-                                                    <span className="text-xs text-[var(--text-muted)] opacity-0 hover:opacity-100">✏️</span>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Date - Click to edit */}
-                                        {isEditingDate ? (
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <input
-                                                    type="number"
-                                                    value={tempDate.day}
-                                                    onChange={(e) => setTempDate({ ...tempDate, day: e.target.value })}
-                                                    placeholder="DD"
-                                                    className="input-field w-14 text-center text-sm"
-                                                    min="1"
-                                                    max="31"
-                                                />
-                                                <span className="text-[var(--text-muted)]">/</span>
-                                                <input
-                                                    type="number"
-                                                    value={tempDate.month}
-                                                    onChange={(e) => setTempDate({ ...tempDate, month: e.target.value })}
-                                                    placeholder="MM"
-                                                    className="input-field w-14 text-center text-sm"
-                                                    min="1"
-                                                    max="12"
-                                                />
-                                                <span className="text-[var(--text-muted)]">/</span>
-                                                <input
-                                                    type="number"
-                                                    value={tempDate.year}
-                                                    onChange={(e) => setTempDate({ ...tempDate, year: e.target.value })}
-                                                    placeholder="YYYY"
-                                                    className="input-field w-20 text-center text-sm"
-                                                />
-                                                <button onClick={() => saveDateEdit(day)} className="text-green-400 hover:text-green-300 text-sm">
-                                                    Save
-                                                </button>
-                                                <button onClick={() => setEditingDateId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                onClick={() => startEditingDate(day)}
-                                                className="text-sm text-[var(--text-muted)] cursor-pointer hover:text-blue-400 transition-colors"
-                                                title="Click to change date"
-                                            >
-                                                {new Date(day.date).toLocaleDateString('en-AU', {
-                                                    weekday: 'long',
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Delete button */}
-                                    <button
-                                        onClick={() => setDeletingId(day.id)}
-                                        className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-2"
-                                        title="Delete"
-                                    >
-                                        🗑️
-                                    </button>
+            {/* Add New Day Form */}
+            {showAddForm && (
+                <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-4">
+                    <h3 className="font-medium text-blue-400">Add New Clinic Day</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm text-[var(--text-muted)] mb-1">Name</label>
+                            <input
+                                type="text"
+                                value={newDayName}
+                                onChange={(e) => setNewDayName(e.target.value)}
+                                placeholder="e.g., Clinic Day 1 - Monday"
+                                className="input-field w-full"
+                            />
+                        </div>
+                        <div className="relative">
+                            <label className="block text-sm text-[var(--text-muted)] mb-1">Date</label>
+                            <button
+                                type="button"
+                                onClick={() => setShowNewDatePicker(!showNewDatePicker)}
+                                className="input-field w-full text-left"
+                            >
+                                {newDayDate ? formatDate(newDayDate) : 'Click to select date...'}
+                            </button>
+                            {showNewDatePicker && (
+                                <div className="absolute z-50 mt-2">
+                                    <DatePicker
+                                        value={newDayDate}
+                                        onChange={(date) => {
+                                            setNewDayDate(date);
+                                            setShowNewDatePicker(false);
+                                        }}
+                                        onClose={() => setShowNewDatePicker(false)}
+                                    />
                                 </div>
                             )}
                         </div>
-                    );
-                })}
-            </div>
-
-            {/* Add New Day */}
-            <div className="pt-4 border-t border-[var(--border-subtle)]">
-                <h3 className="text-sm font-medium text-[var(--text-muted)] mb-3">Add New Clinic Day</h3>
-                <div className="space-y-3">
-                    <input
-                        type="text"
-                        value={newDay.name}
-                        onChange={(e) => setNewDay({ ...newDay, name: e.target.value })}
-                        placeholder="Clinic Day Name (e.g., Clinic Day 1)"
-                        className="input-field w-full"
-                    />
-                    <div className="flex gap-2 items-center">
-                        <input
-                            type="number"
-                            value={newDay.day}
-                            onChange={(e) => setNewDay({ ...newDay, day: e.target.value })}
-                            placeholder="DD"
-                            min="1"
-                            max="31"
-                            className="input-field w-16 text-center"
-                        />
-                        <span className="text-[var(--text-muted)]">/</span>
-                        <input
-                            type="number"
-                            value={newDay.month}
-                            onChange={(e) => setNewDay({ ...newDay, month: e.target.value })}
-                            placeholder="MM"
-                            min="1"
-                            max="12"
-                            className="input-field w-16 text-center"
-                        />
-                        <span className="text-[var(--text-muted)]">/</span>
-                        <input
-                            type="number"
-                            value={newDay.year}
-                            onChange={(e) => setNewDay({ ...newDay, year: e.target.value })}
-                            placeholder="YYYY"
-                            min="2024"
-                            max="2030"
-                            className="input-field w-24 text-center"
-                        />
-                        <button onClick={handleAddDay} className="btn-primary ml-auto">
-                            Add Day
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={handleAddDay} className="btn-primary" disabled={!newDayName || !newDayDate}>
+                            Add Clinic Day
+                        </button>
+                        <button onClick={() => setShowAddForm(false)} className="btn-secondary">
+                            Cancel
                         </button>
                     </div>
                 </div>
+            )}
+
+            {/* Existing Days */}
+            <div className="space-y-2">
+                {state.clinicDays.length === 0 ? (
+                    <div className="text-center py-8 text-[var(--text-muted)]">
+                        <div className="text-4xl mb-2">📅</div>
+                        <p>No clinic days configured yet.</p>
+                        <p className="text-sm">Click "Add Day" to get started.</p>
+                    </div>
+                ) : (
+                    state.clinicDays.map(day => {
+                        const isEditing = editingId === day.id;
+                        const isDeleting = deletingId === day.id;
+                        const isShowingDatePicker = showDatePicker === day.id;
+
+                        return (
+                            <div
+                                key={day.id}
+                                className={`p-4 bg-[var(--bg-secondary)] rounded-lg transition-all ${isDeleting ? 'opacity-50 scale-98' : ''}`}
+                            >
+                                {isDeleting ? (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[var(--text-muted)]">Delete &quot;{day.name}&quot;?</span>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => handleDeleteDay(day.id)} className="btn-danger text-sm px-3 py-1">
+                                                Yes, Delete
+                                            </button>
+                                            <button onClick={() => setDeletingId(null)} className="btn-secondary text-sm px-3 py-1">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1">
+                                            {/* Name - inline edit */}
+                                            {isEditing ? (
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <input
+                                                        type="text"
+                                                        value={tempName}
+                                                        onChange={(e) => setTempName(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') saveEdit(day);
+                                                            if (e.key === 'Escape') setEditingId(null);
+                                                        }}
+                                                        className="input-field flex-1 py-1"
+                                                        autoFocus
+                                                    />
+                                                    <button onClick={() => saveEdit(day)} className="text-green-400 hover:text-green-300 px-2">
+                                                        ✓
+                                                    </button>
+                                                    <button onClick={() => setEditingId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2">
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    onClick={() => startEditing(day)}
+                                                    className="font-medium cursor-pointer hover:text-blue-400 transition-colors group"
+                                                >
+                                                    {day.name}
+                                                    <span className="text-xs text-[var(--text-muted)] ml-2 opacity-0 group-hover:opacity-100">
+                                                        ✏️ click to rename
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {/* Date with calendar picker */}
+                                            <div className="relative">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowDatePicker(isShowingDatePicker ? null : day.id)}
+                                                    className="text-sm text-[var(--text-muted)] hover:text-blue-400 transition-colors"
+                                                >
+                                                    📅 {formatDate(day.date)}
+                                                </button>
+                                                {isShowingDatePicker && (
+                                                    <div className="absolute z-50 mt-2 left-0">
+                                                        <DatePicker
+                                                            value={day.date}
+                                                            onChange={(newDate) => updateDate(day, newDate)}
+                                                            onClose={() => setShowDatePicker(null)}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Delete button */}
+                                        <button
+                                            onClick={() => setDeletingId(day.id)}
+                                            className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-500/10"
+                                            title="Delete this clinic day"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </div>
     );
