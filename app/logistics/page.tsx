@@ -23,7 +23,7 @@ export default function LogisticsPage() {
                 {/* Page Header */}
                 <div className="page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="page-title">Logistics Dashboard</h1>
+                        <h1 className="page-title">Dashboard</h1>
                         <p className="text-sm text-[var(--text-muted)] mt-1">
                             Staffing levels, capacity planning, and coordination
                         </p>
@@ -64,16 +64,6 @@ export default function LogisticsPage() {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        {/* Patient Capacity */}
-                        <section className="section animate-fade-in" style={{ animationDelay: '100ms' }}>
-                            <h2 className="section-title flex items-center gap-2">
-                                <span className="text-xl">📊</span>
-                                Patient Capacity
-                            </h2>
-                            {selectedClinicDayId && (
-                                <CapacityPanel clinicDayId={selectedClinicDayId} />
-                            )}
-                        </section>
 
                         {/* Unassigned Participants */}
                         <section className="section animate-fade-in" style={{ animationDelay: '200ms' }}>

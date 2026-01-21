@@ -363,6 +363,16 @@ function ParticipantsTab() {
         setNewParticipant({ name: '', email: '' });
     };
 
+    const toggleAdmin = (participant: Participant) => {
+        const updatedParticipants = state.participants.map(p =>
+            p.id === participant.id ? { ...p, isAdmin: !p.isAdmin } : p
+        );
+        dispatch({
+            type: 'IMPORT_STATE',
+            payload: { ...state, participants: updatedParticipants },
+        });
+    };
+
     return (
         <div className="glass-card p-6 space-y-6">
             <div className="flex items-center justify-between">
@@ -384,7 +394,17 @@ function ParticipantsTab() {
                             <div className="font-medium">{p.name}</div>
                             <div className="text-sm text-[var(--text-muted)]">{p.email}</div>
                         </div>
-                        {p.isAdmin && <span className="badge badge-available">Admin</span>}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => toggleAdmin(p)}
+                                className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${p.isAdmin
+                                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                                        : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'
+                                    }`}
+                            >
+                                {p.isAdmin ? '✓ Admin' : 'Make Admin'}
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>

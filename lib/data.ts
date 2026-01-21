@@ -190,8 +190,8 @@ export const DEFAULT_FLOW_RATES: FlowRate[] = [
 export const SAMPLE_PARTICIPANTS: Participant[] = [
     {
         id: 'admin-1',
-        name: 'Admin User',
-        email: 'admin@pmmt.org',
+        name: 'Martyn Ng',
+        email: 'ordersinformation123@gmail.com',
         primaryRole: 'logistics',
         isAdmin: true,
     },

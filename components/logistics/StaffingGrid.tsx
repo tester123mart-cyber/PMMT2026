@@ -67,9 +67,6 @@ export default function StaffingGrid({ clinicDayId }: StaffingGridProps) {
                                         <div className="text-center">
                                             <div className="font-bold text-lg">
                                                 {status?.currentCount ?? 0}
-                                                <span className="text-sm text-[var(--text-muted)] font-normal">
-                                                    /{status?.capacity ?? 0}
-                                                </span>
                                             </div>
                                             {status?.isFull && (
                                                 <span className="text-xs text-green-400">Full</span>
@@ -121,7 +118,7 @@ export default function StaffingGrid({ clinicDayId }: StaffingGridProps) {
                                                 {shift.name.split(' ')[0]}
                                             </div>
                                             <div className="font-bold">
-                                                {status?.currentCount ?? 0}/{status?.capacity ?? 0}
+                                                {status?.currentCount ?? 0}
                                             </div>
                                         </div>
                                     );

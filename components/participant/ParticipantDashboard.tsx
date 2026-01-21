@@ -101,7 +101,10 @@ export default function ParticipantDashboard() {
                 </section>
 
                 {/* Choose Shifts */}
-                <section>
+                <section className="mt-10">
+                    <h2 className="text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide mb-4">
+                        Select a Shift
+                    </h2>
                     {/* Shift buttons */}
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         {SHIFTS.map(shift => {
@@ -111,7 +114,7 @@ export default function ParticipantDashboard() {
                             return (
                                 <button
                                     key={shift.id}
-                                    onClick={() => setSelectedShiftId(isSelected ? null : shift.id)}
+                                    onClick={() => setSelectedShiftId(shift.id)}
                                     className={`
                                         flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all text-left sm:text-center
                                         ${isSelected
@@ -122,7 +125,9 @@ export default function ParticipantDashboard() {
                                         }
                                     `}
                                 >
-                                    <div className="font-semibold">{shift.name.replace(' Shift', '')}</div>
+                                    <div className="font-semibold">
+                                        {shift.id === 'afternoon' ? '🌅' : '☀️'} {shift.name.replace(' Shift', '')}
+                                    </div>
                                     <div className={`text-xs ${isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>
                                         {shift.startTime} - {shift.endTime}
                                     </div>

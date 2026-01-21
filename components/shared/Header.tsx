@@ -40,13 +40,6 @@ export default function Header() {
                             <span>📊</span>
                             <span>Dashboard</span>
                         </Link>
-                        <Link
-                            href="/operations"
-                            className={`nav-link ${isOperations ? 'nav-link-active' : ''}`}
-                        >
-                            <span>📈</span>
-                            <span>Data View</span>
-                        </Link>
                     </nav>
 
                     {/* User Menu with subtle Admin link */}
@@ -65,7 +58,15 @@ export default function Header() {
                                 {/* Subtle separator */}
                                 <div className="h-6 w-px bg-[var(--border-subtle)]" />
 
-                                {/* Admin link - same style as sign out */}
+                                {/* Reporting link */}
+                                <Link
+                                    href="/operations"
+                                    className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                                >
+                                    Reporting
+                                </Link>
+
+                                {/* Admin link */}
                                 <Link
                                     href="/admin"
                                     className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -99,13 +100,6 @@ export default function Header() {
                     >
                         <span>📊</span>
                         <span className="text-sm">Dashboard</span>
-                    </Link>
-                    <Link
-                        href="/operations"
-                        className={`nav-link flex-shrink-0 ${isOperations ? 'nav-link-active' : ''}`}
-                    >
-                        <span>📈</span>
-                        <span className="text-sm">Data</span>
                     </Link>
                 </nav>
             </div>

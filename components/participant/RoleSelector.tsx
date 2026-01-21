@@ -37,24 +37,24 @@ export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSele
         setShowPeoplePreview(true);
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!selectedRoleId) return;
 
         // Remove existing assignment for this shift if any
         if (myShiftAssignment) {
-            removeAssignment(myShiftAssignment.id);
+            await removeAssignment(myShiftAssignment.id);
         }
 
         // Add new assignment
-        addAssignment(clinicDayId, shiftId, selectedRoleId);
+        await addAssignment(clinicDayId, shiftId, selectedRoleId);
         setShowPeoplePreview(false);
         setSelectedRoleId(null);
         onClose();
     };
 
-    const handleRemoveAssignment = () => {
+    const handleRemoveAssignment = async () => {
         if (myShiftAssignment) {
-            removeAssignment(myShiftAssignment.id);
+            await removeAssignment(myShiftAssignment.id);
         }
         onClose();
     };

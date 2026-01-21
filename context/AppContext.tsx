@@ -1,18 +1,22 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useRef } from 'react';
 import { AppState, Participant, Assignment, ClinicDay, ShiftId } from '@/lib/types';
 import { loadState, saveState, generateId, findParticipantByEmail } from '@/lib/storage';
 import { ROLES, SHIFTS } from '@/lib/data';
+import * as firebaseService from '@/lib/firebaseService';
 
 // Action types
 type Action =
     | { type: 'LOAD_STATE'; payload: AppState }
     | { type: 'LOGIN'; payload: Participant }
     | { type: 'LOGOUT' }
-    | { type: 'ADD_PARTICIPANT'; payload: Omit<Participant, 'id'> }
-    | { type: 'ADD_ASSIGNMENT'; payload: Omit<Assignment, 'id' | 'createdAt'> }
+    | { type: 'ADD_PARTICIPANT'; payload: Participant }
+    | { type: 'ADD_ASSIGNMENT'; payload: Assignment }
     | { type: 'REMOVE_ASSIGNMENT'; payload: string }
+    | { type: 'UPDATE_ASSIGNMENTS'; payload: Assignment[] }
+    | { type: 'UPDATE_PARTICIPANTS'; payload: Participant[] }
+    | { type: 'UPDATE_CLINIC_DAYS'; payload: ClinicDay[] }
     | { type: 'UPDATE_ASSIGNMENT_ATTENDANCE'; payload: { id: string; attended: boolean } }
     | { type: 'UPDATE_CLINIC_DAY'; payload: ClinicDay }
     | { type: 'UPDATE_FLOW_RATE'; payload: { roleId: string; rate: number } }
@@ -31,25 +35,22 @@ function appReducer(state: AppState, action: Action): AppState {
             return { ...state, currentUser: null };
 
         case 'ADD_PARTICIPANT': {
-            const newParticipant: Participant = {
-                ...action.payload,
-                id: generateId(),
-            };
+            // Check if participant already exists
+            const exists = state.participants.some(p => p.id === action.payload.id);
+            if (exists) return state;
             return {
                 ...state,
-                participants: [...state.participants, newParticipant],
+                participants: [...state.participants, action.payload],
             };
         }
 
         case 'ADD_ASSIGNMENT': {
-            const newAssignment: Assignment = {
-                ...action.payload,
-                id: generateId(),
-                createdAt: new Date().toISOString(),
-            };
+            // Check if assignment already exists
+            const exists = state.assignments.some(a => a.id === action.payload.id);
+            if (exists) return state;
             return {
                 ...state,
-                assignments: [...state.assignments, newAssignment],
+                assignments: [...state.assignments, action.payload],
             };
         }
 
@@ -57,6 +58,24 @@ function appReducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 assignments: state.assignments.filter(a => a.id !== action.payload),
+            };
+
+        case 'UPDATE_ASSIGNMENTS':
+            return {
+                ...state,
+                assignments: action.payload,
+            };
+
+        case 'UPDATE_PARTICIPANTS':
+            return {
+                ...state,
+                participants: action.payload,
+            };
+
+        case 'UPDATE_CLINIC_DAYS':
+            return {
+                ...state,
+                clinicDays: action.payload,
             };
 
         case 'UPDATE_ASSIGNMENT_ATTENDANCE':
@@ -102,10 +121,10 @@ interface AppContextType {
     state: AppState;
     dispatch: React.Dispatch<Action>;
     // Convenience methods
-    login: (email: string, name: string) => Participant | null;
+    login: (email: string, name: string) => Promise<Participant | null>;
     logout: () => void;
-    addAssignment: (clinicDayId: string, shiftId: ShiftId, roleId: string) => boolean;
-    removeAssignment: (assignmentId: string) => void;
+    addAssignment: (clinicDayId: string, shiftId: ShiftId, roleId: string) => Promise<boolean>;
+    removeAssignment: (assignmentId: string) => Promise<void>;
     isRoleFull: (clinicDayId: string, shiftId: ShiftId, roleId: string) => boolean;
     getMyAssignments: (clinicDayId: string) => Assignment[];
     getParticipantsForShift: (clinicDayId: string, shiftId: ShiftId, roleId: string) => Participant[];
@@ -126,13 +145,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
         shiftActuals: [],
     });
 
+    const isFirebaseEnabled = firebaseService.isFirebaseConfigured();
+    const unsubscribeRefs = useRef<(() => void)[]>([]);
+
     // Load state on mount
     useEffect(() => {
-        const loaded = loadState();
-        dispatch({ type: 'LOAD_STATE', payload: loaded });
-    }, []);
+        const initializeData = async () => {
+            if (isFirebaseEnabled) {
+                // Initialize default data in Firebase if needed
+                await firebaseService.initializeDefaultData();
 
-    // Save state on change (but not on initial load)
+                // Load from Firebase
+                const firebaseState = await firebaseService.loadStateFromFirebase();
+                const localState = loadState();
+
+                dispatch({
+                    type: 'LOAD_STATE',
+                    payload: {
+                        ...localState,
+                        ...firebaseState,
+                        currentUser: localState.currentUser, // Keep local user session
+                        roles: ROLES,
+                        shifts: SHIFTS,
+                    } as AppState,
+                });
+
+                // Set up real-time listeners
+                const unsubAssignments = firebaseService.subscribeToAssignments((assignments) => {
+                    dispatch({ type: 'UPDATE_ASSIGNMENTS', payload: assignments });
+                });
+                const unsubParticipants = firebaseService.subscribeToParticipants((participants) => {
+                    dispatch({ type: 'UPDATE_PARTICIPANTS', payload: participants });
+                });
+                const unsubClinicDays = firebaseService.subscribeToClinicDays((clinicDays) => {
+                    dispatch({ type: 'UPDATE_CLINIC_DAYS', payload: clinicDays });
+                });
+
+                if (unsubAssignments) unsubscribeRefs.current.push(unsubAssignments);
+                if (unsubParticipants) unsubscribeRefs.current.push(unsubParticipants);
+                if (unsubClinicDays) unsubscribeRefs.current.push(unsubClinicDays);
+            } else {
+                // Fall back to localStorage
+                const loaded = loadState();
+                dispatch({ type: 'LOAD_STATE', payload: loaded });
+            }
+        };
+
+        initializeData();
+
+        // Cleanup subscriptions on unmount
+        return () => {
+            unsubscribeRefs.current.forEach(unsub => unsub());
+        };
+    }, [isFirebaseEnabled]);
+
+    // Save state to localStorage (as backup, even with Firebase)
     useEffect(() => {
         if (state.participants.length > 0 || state.assignments.length > 0) {
             saveState(state);
@@ -140,8 +207,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, [state]);
 
     // Login helper
-    const login = (email: string, name: string): Participant | null => {
-        let participant = findParticipantByEmail(state, email);
+    const login = async (email: string, name: string): Promise<Participant | null> => {
+        let participant: Participant | null = null;
+
+        if (isFirebaseEnabled) {
+            // Check Firebase for existing participant
+            participant = await firebaseService.getParticipantByEmail(email);
+        }
+
+        if (!participant) {
+            // Check local state
+            participant = findParticipantByEmail(state, email) || null;
+        }
 
         if (!participant) {
             // Create new participant
@@ -150,10 +227,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 email: email.toLowerCase(),
                 name,
             };
-            dispatch({ type: 'ADD_PARTICIPANT', payload: { email: email.toLowerCase(), name } });
-            // Re-find to get the one with ID
-            const newState = { ...state, participants: [...state.participants, participant] };
-            participant = findParticipantByEmail(newState, email) || participant;
+
+            if (isFirebaseEnabled) {
+                await firebaseService.addParticipant(participant);
+            }
+            dispatch({ type: 'ADD_PARTICIPANT', payload: participant });
         }
 
         dispatch({ type: 'LOGIN', payload: participant });
@@ -178,7 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     // Add assignment helper
-    const addAssignment = (clinicDayId: string, shiftId: ShiftId, roleId: string): boolean => {
+    const addAssignment = async (clinicDayId: string, shiftId: ShiftId, roleId: string): Promise<boolean> => {
         if (!state.currentUser) return false;
         if (isRoleFull(clinicDayId, shiftId, roleId)) return false;
 
@@ -190,20 +268,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
         );
         if (existing) return false;
 
-        dispatch({
-            type: 'ADD_ASSIGNMENT',
-            payload: {
-                participantId: state.currentUser.id,
-                clinicDayId,
-                shiftId,
-                roleId,
-            },
-        });
+        const newAssignment: Assignment = {
+            id: generateId(),
+            participantId: state.currentUser.id,
+            clinicDayId,
+            shiftId,
+            roleId,
+            createdAt: new Date().toISOString(),
+        };
+
+        if (isFirebaseEnabled) {
+            await firebaseService.addAssignment(newAssignment);
+        }
+        dispatch({ type: 'ADD_ASSIGNMENT', payload: newAssignment });
         return true;
     };
 
     // Remove assignment helper
-    const removeAssignment = (assignmentId: string) => {
+    const removeAssignment = async (assignmentId: string): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.removeAssignment(assignmentId);
+        }
         dispatch({ type: 'REMOVE_ASSIGNMENT', payload: assignmentId });
     };
 

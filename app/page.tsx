@@ -10,7 +10,7 @@ export default function Home() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -25,7 +25,7 @@ export default function Home() {
       return;
     }
 
-    login(email.trim(), name.trim());
+    await login(email.trim(), name.trim());
   };
 
   // If logged in, show participant dashboard
@@ -41,7 +41,7 @@ export default function Home() {
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🏥</div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            PMMT
+            PMMT2026
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-2">
             Medical Mission Coordination
