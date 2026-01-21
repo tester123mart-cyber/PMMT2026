@@ -41,7 +41,7 @@ export default function Home() {
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🏥</div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            PMMT Logistics
+            PMMT
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-2">
             Medical Mission Coordination

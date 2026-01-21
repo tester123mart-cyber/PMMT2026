@@ -73,7 +73,7 @@ export default function ParticipantDashboard() {
                                             <div>
                                                 <div className="font-medium text-[var(--text-primary)]">{role?.name}</div>
                                                 <div className="text-xs text-[var(--text-muted)]">
-                                                    {clinicDay?.name} • {shift?.name}
+                                                    {clinicDay?.name} ({clinicDay ? formatDate(clinicDay.date) : ''}) • {shift?.name}
                                                 </div>
                                             </div>
                                         </div>
@@ -113,7 +113,7 @@ export default function ParticipantDashboard() {
                     </div>
 
                     {/* Shift buttons */}
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         {SHIFTS.map(shift => {
                             const isSelected = selectedShiftId === shift.id;
                             const hasAssignment = selectedDayAssignments.some(a => a.shiftId === shift.id);
@@ -123,7 +123,7 @@ export default function ParticipantDashboard() {
                                     key={shift.id}
                                     onClick={() => setSelectedShiftId(isSelected ? null : shift.id)}
                                     className={`
-                                        flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all
+                                        flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all text-left sm:text-center
                                         ${isSelected
                                             ? 'bg-blue-500 text-white'
                                             : hasAssignment
@@ -132,8 +132,11 @@ export default function ParticipantDashboard() {
                                         }
                                     `}
                                 >
-                                    {shift.name.replace(' Shift', '')}
-                                    {hasAssignment && ' ✓'}
+                                    <div className="font-semibold">{shift.name.replace(' Shift', '')}</div>
+                                    <div className={`text-xs ${isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>
+                                        {shift.startTime} - {shift.endTime}
+                                    </div>
+                                    {hasAssignment && <div className="text-xs mt-1 text-green-600 font-bold">✓ Assigned</div>}
                                 </button>
                             );
                         })}
