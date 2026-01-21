@@ -65,14 +65,12 @@ export default function Header() {
                                 {/* Subtle separator */}
                                 <div className="h-6 w-px bg-[var(--border-subtle)]" />
 
-                                {/* Admin link - subtle, next to sign out */}
+                                {/* Admin link - same style as sign out */}
                                 <Link
                                     href="/admin"
-                                    className={`text-xs hover:text-[var(--text-primary)] transition-colors ${isAdmin ? 'text-blue-500' : 'text-[var(--text-muted)]'
-                                        }`}
-                                    title="Admin Settings"
+                                    className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                                 >
-                                    ⚙️
+                                    Admin
                                 </Link>
 
                                 <button
