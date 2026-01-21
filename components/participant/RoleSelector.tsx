@@ -1,0 +1,184 @@
+'use client';
+
+import { useState } from 'react';
+import { useApp } from '@/context/AppContext';
+import { ShiftId } from '@/lib/types';
+import { getUnderstaffedRoles, getRoleShiftStatus } from '@/lib/calculations';
+import PeoplePreview from './PeoplePreview';
+
+interface RoleSelectorProps {
+    clinicDayId: string;
+    shiftId: ShiftId;
+    onClose: () => void;
+}
+
+export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSelectorProps) {
+    const { state, addAssignment, removeAssignment, getMyAssignments, isRoleFull } = useApp();
+    const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+    const [showPeoplePreview, setShowPeoplePreview] = useState(false);
+
+    // Get current user's assignment for this shift
+    const myAssignments = getMyAssignments(clinicDayId);
+    const myShiftAssignment = myAssignments.find(a => a.shiftId === shiftId);
+
+    // Get understaffed roles for this shift
+    const understaffedRoles = getUnderstaffedRoles(state, clinicDayId, shiftId);
+    const understaffedRoleIds = new Set(understaffedRoles.map(r => r.roleId));
+
+    // Group roles by category
+    const clinicalRoles = state.roles.filter(r => r.category === 'clinical');
+    const supportRoles = state.roles.filter(r => r.category === 'support');
+
+    const handleRoleSelect = (roleId: string) => {
+        if (isRoleFull(clinicDayId, shiftId, roleId) && myShiftAssignment?.roleId !== roleId) {
+            return; // Can't select a full role (unless already assigned)
+        }
+        setSelectedRoleId(roleId);
+        setShowPeoplePreview(true);
+    };
+
+    const handleConfirm = () => {
+        if (!selectedRoleId) return;
+
+        // Remove existing assignment for this shift if any
+        if (myShiftAssignment) {
+            removeAssignment(myShiftAssignment.id);
+        }
+
+        // Add new assignment
+        addAssignment(clinicDayId, shiftId, selectedRoleId);
+        setShowPeoplePreview(false);
+        setSelectedRoleId(null);
+        onClose();
+    };
+
+    const handleRemoveAssignment = () => {
+        if (myShiftAssignment) {
+            removeAssignment(myShiftAssignment.id);
+        }
+        onClose();
+    };
+
+    const getRoleStatus = (roleId: string) => {
+        return getRoleShiftStatus(state, clinicDayId, shiftId, roleId);
+    };
+
+    const renderRoleCard = (roleId: string) => {
+        const role = state.roles.find(r => r.id === roleId);
+        if (!role) return null;
+
+        const status = getRoleStatus(roleId);
+        const isFull = status.isFull;
+        const isMyRole = myShiftAssignment?.roleId === roleId;
+        const needsHelp = understaffedRoleIds.has(roleId);
+        const fillPercent = status.capacity > 0 ? (status.currentCount / status.capacity) * 100 : 100;
+
+        return (
+            <button
+                key={roleId}
+                onClick={() => handleRoleSelect(roleId)}
+                disabled={isFull && !isMyRole}
+                className={`
+          role-card text-left w-full
+          ${selectedRoleId === roleId ? 'role-card-selected' : ''}
+          ${isFull && !isMyRole ? 'role-card-disabled' : ''}
+          ${isMyRole ? 'ring-2 ring-green-500' : ''}
+        `}
+            >
+                <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">{role.icon}</span>
+                        <div>
+                            <div className="font-medium text-[var(--text-primary)]">{role.name}</div>
+                            <div className="text-xs text-[var(--text-muted)]">
+                                {status.currentCount} / {status.capacity} signed up
+                            </div>
+                        </div>
+                    </div>
+                    {isMyRole && <span className="badge badge-available">Your Role</span>}
+                    {needsHelp && !isMyRole && !isFull && (
+                        <span className="badge badge-help-needed">Help Needed</span>
+                    )}
+                    {isFull && !isMyRole && <span className="badge badge-full">Full</span>}
+                </div>
+
+                {/* Capacity Bar */}
+                <div className="capacity-bar mt-3">
+                    <div
+                        className={`capacity-bar-fill ${fillPercent >= 75 ? 'green' : fillPercent >= 25 ? 'yellow' : 'red'
+                            }`}
+                        style={{ width: `${Math.min(fillPercent, 100)}%` }}
+                    />
+                </div>
+            </button>
+        );
+    };
+
+    // People preview modal
+    if (showPeoplePreview && selectedRoleId) {
+        return (
+            <PeoplePreview
+                clinicDayId={clinicDayId}
+                shiftId={shiftId}
+                roleId={selectedRoleId}
+                onConfirm={handleConfirm}
+                onCancel={() => {
+                    setShowPeoplePreview(false);
+                    setSelectedRoleId(null);
+                }}
+            />
+        );
+    }
+
+    return (
+        <div className="glass-card p-4">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-[var(--text-primary)]">
+                    Select Your Role
+                </h3>
+                <button
+                    onClick={onClose}
+                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                    ✕
+                </button>
+            </div>
+
+            {/* Current Assignment */}
+            {myShiftAssignment && (
+                <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="text-green-400">✓</span>
+                            <span className="text-sm text-green-300">
+                                Currently assigned: {state.roles.find(r => r.id === myShiftAssignment.roleId)?.name}
+                            </span>
+                        </div>
+                        <button
+                            onClick={handleRemoveAssignment}
+                            className="text-xs text-red-400 hover:text-red-300"
+                        >
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Clinical Roles */}
+            <div className="mb-4">
+                <h4 className="text-sm font-medium text-[var(--text-muted)] mb-2">Clinical Roles</h4>
+                <div className="grid gap-2 sm:grid-cols-2">
+                    {clinicalRoles.map(role => renderRoleCard(role.id))}
+                </div>
+            </div>
+
+            {/* Support Roles */}
+            <div>
+                <h4 className="text-sm font-medium text-[var(--text-muted)] mb-2">Support Roles</h4>
+                <div className="grid gap-2 sm:grid-cols-2">
+                    {supportRoles.map(role => renderRoleCard(role.id))}
+                </div>
+            </div>
+        </div>
+    );
+}
