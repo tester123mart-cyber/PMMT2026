@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PMMT Logistics | Mission Coordination",
-  description: "Central coordination tool for PMMT 26 medical mission trip - role allocation, clinic capacity planning, and patient ticketing.",
-  keywords: ["PMMT", "medical mission", "logistics", "coordination", "clinic"],
+  title: "PMMT 2026 | Mission Coordination",
+  description: "Central coordination tool for PMMT 2026 medical mission trip - role allocation, clinic capacity planning, and patient ticketing.",
+  keywords: ["PMMT", "medical mission", "logistics", "coordination", "clinic", "2026"],
 };
 
 export default function RootLayout({
