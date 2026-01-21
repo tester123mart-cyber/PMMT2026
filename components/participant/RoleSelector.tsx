@@ -90,9 +90,6 @@ export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSele
                         <span className="text-2xl">{role.icon}</span>
                         <div>
                             <div className="font-medium text-[var(--text-primary)]">{role.name}</div>
-                            <div className="text-xs text-[var(--text-muted)]">
-                                {status.currentCount} / {status.capacity} signed up
-                            </div>
                         </div>
                     </div>
                     {isMyRole && <span className="badge badge-available">Your Role</span>}
@@ -102,14 +99,6 @@ export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSele
                     {isFull && !isMyRole && <span className="badge badge-full">Full</span>}
                 </div>
 
-                {/* Capacity Bar */}
-                <div className="capacity-bar mt-3">
-                    <div
-                        className={`capacity-bar-fill ${fillPercent >= 75 ? 'green' : fillPercent >= 25 ? 'yellow' : 'red'
-                            }`}
-                        style={{ width: `${Math.min(fillPercent, 100)}%` }}
-                    />
-                </div>
             </button>
         );
     };

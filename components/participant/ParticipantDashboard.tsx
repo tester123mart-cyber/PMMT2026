@@ -92,26 +92,6 @@ export default function ParticipantDashboard() {
 
                 {/* Choose Shifts */}
                 <section>
-                    <div className="flex items-center justify-between mb-3">
-                        <h2 className="text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">
-                            Add Role
-                        </h2>
-                        <select
-                            value={selectedClinicDayId}
-                            onChange={(e) => {
-                                setSelectedClinicDayId(e.target.value);
-                                setSelectedShiftId(null);
-                            }}
-                            className="text-sm py-1 px-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-primary)]"
-                        >
-                            {state.clinicDays.map(day => (
-                                <option key={day.id} value={day.id}>
-                                    {day.name} ({formatDate(day.date)})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
                     {/* Shift buttons */}
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         {SHIFTS.map(shift => {
