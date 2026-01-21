@@ -35,29 +35,61 @@ export default function ParticipantDashboard() {
             <Header />
 
             <main className="container py-6">
+                {/* Welcome Banner */}
+                <div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                            {state.currentUser?.name?.charAt(0) || '?'}
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-[var(--text-primary)]">
+                                Welcome, {state.currentUser?.name?.split(' ')[0] || 'Participant'}!
+                            </h1>
+                            <p className="text-sm text-[var(--text-secondary)]">
+                                Manage your shifts and see what&apos;s happening today
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-4 mb-8">
+                    <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                        <div className="text-2xl font-bold text-blue-500">{todayAssignments.length}</div>
+                        <div className="text-xs text-[var(--text-muted)]">Today&apos;s Shifts</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                        <div className="text-2xl font-bold text-purple-500">{tomorrowAssignments.length}</div>
+                        <div className="text-xs text-[var(--text-muted)]">Tomorrow</div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                        <div className="text-2xl font-bold text-green-500">{state.clinicDays.length}</div>
+                        <div className="text-xs text-[var(--text-muted)]">Clinic Days</div>
+                    </div>
+                </div>
+
                 {/* Today's Schedule */}
-                <section className="section animate-fade-in">
+                <section className="mb-8 animate-fade-in">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="section-title flex items-center gap-2">
-                            <span className="text-2xl">📅</span>
+                        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">📅</span>
                             Today&apos;s Schedule
                         </h2>
                         {activeClinicDay && (
-                            <span className="text-sm text-[var(--text-muted)]">
+                            <span className="text-sm px-3 py-1 rounded-full bg-blue-500/10 text-blue-600">
                                 {activeClinicDay.name}
                             </span>
                         )}
                     </div>
 
                     {todayAssignments.length === 0 ? (
-                        <div className="glass-card p-6 text-center">
-                            <div className="text-4xl mb-3">😌</div>
-                            <p className="text-[var(--text-secondary)]">
-                                No shifts assigned for today
-                            </p>
+                        <div className="p-8 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center">
+                            <div className="text-5xl mb-4">🌴</div>
+                            <p className="text-[var(--text-primary)] font-medium">No shifts assigned for today</p>
+                            <p className="text-sm text-[var(--text-muted)] mt-1">Enjoy your rest day!</p>
                         </div>
                     ) : (
-                        <div className="grid gap-3 md:grid-cols-3">
+                        <div className="grid gap-4 md:grid-cols-3">
                             {SHIFTS.map(shift => {
                                 const assignment = todayAssignments.find(a => a.shiftId === shift.id);
                                 const role = assignment ? getRoleDetails(assignment.roleId) : null;
@@ -76,44 +108,62 @@ export default function ParticipantDashboard() {
                 </section>
 
                 {/* Tomorrow's Selection */}
-                <section className="section animate-slide-up" style={{ animationDelay: '100ms' }}>
+                <section className="mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="section-title flex items-center gap-2">
-                            <span className="text-2xl">✋</span>
+                        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">✋</span>
                             Choose Tomorrow&apos;s Shifts
                         </h2>
                         {nextClinicDay && (
-                            <span className="text-sm text-[var(--text-muted)]">
+                            <span className="text-sm px-3 py-1 rounded-full bg-purple-500/10 text-purple-600">
                                 {nextClinicDay.name}
                             </span>
                         )}
                     </div>
 
-                    {/* Shift Selection Tabs */}
-                    <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+                    {/* Shift Selection Cards */}
+                    <div className="grid gap-3 md:grid-cols-3 mb-4">
                         {SHIFTS.map(shift => {
                             const isSelected = selectedShiftId === shift.id;
                             const hasAssignment = tomorrowAssignments.some(a => a.shiftId === shift.id);
+                            const assignedRole = hasAssignment
+                                ? getRoleDetails(tomorrowAssignments.find(a => a.shiftId === shift.id)?.roleId || '')
+                                : null;
 
                             return (
                                 <button
                                     key={shift.id}
                                     onClick={() => setSelectedShiftId(isSelected ? null : shift.id)}
                                     className={`
-                    flex-shrink-0 px-4 py-3 rounded-xl font-medium transition-all
-                    ${isSelected
-                                            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
-                                            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                                        p-4 rounded-xl text-left transition-all border-2
+                                        ${isSelected
+                                            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-transparent shadow-lg scale-[1.02]'
+                                            : hasAssignment
+                                                ? 'bg-green-500/5 border-green-500/30 hover:border-green-500/50'
+                                                : 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] hover:border-blue-500/30'
                                         }
-                    ${hasAssignment ? 'ring-2 ring-green-500 ring-offset-2 ring-offset-[var(--bg-primary)]' : ''}
-                  `}
+                                    `}
                                 >
-                                    <div className="text-left">
-                                        <div className="text-sm">{shift.name}</div>
-                                        <div className="text-xs opacity-75">{shift.startTime} - {shift.endTime}</div>
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <div className={`font-semibold ${isSelected ? 'text-white' : 'text-[var(--text-primary)]'}`}>
+                                                {shift.name.replace(' Shift', '')}
+                                            </div>
+                                            <div className={`text-sm ${isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>
+                                                {shift.startTime} - {shift.endTime}
+                                            </div>
+                                        </div>
+                                        {hasAssignment && (
+                                            <div className="flex items-center gap-1">
+                                                <span>{assignedRole?.icon}</span>
+                                                <span className={`text-xs ${isSelected ? 'text-white' : 'text-green-600'}`}>✓</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    {hasAssignment && (
-                                        <span className="ml-2 text-green-400">✓</span>
+                                    {hasAssignment && !isSelected && (
+                                        <div className="mt-2 text-xs text-green-600 font-medium">
+                                            {assignedRole?.name}
+                                        </div>
                                     )}
                                 </button>
                             );
@@ -128,10 +178,10 @@ export default function ParticipantDashboard() {
                             onClose={() => setSelectedShiftId(null)}
                         />
                     ) : (
-                        <div className="glass-card p-6 text-center">
-                            <div className="text-4xl mb-3">👆</div>
+                        <div className="p-6 rounded-xl bg-[var(--bg-secondary)] border border-dashed border-[var(--border-subtle)] text-center">
+                            <div className="text-3xl mb-2">☝️</div>
                             <p className="text-[var(--text-secondary)]">
-                                Tap a shift above to select your role
+                                Select a shift above to choose your role
                             </p>
                         </div>
                     )}
@@ -139,13 +189,13 @@ export default function ParticipantDashboard() {
 
                 {/* My Commitments Summary */}
                 {tomorrowAssignments.length > 0 && (
-                    <section className="section animate-slide-up" style={{ animationDelay: '200ms' }}>
-                        <h2 className="section-title flex items-center gap-2">
-                            <span className="text-2xl">✅</span>
+                    <section className="animate-slide-up" style={{ animationDelay: '200ms' }}>
+                        <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2 mb-4">
+                            <span className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">✅</span>
                             Your Commitments for Tomorrow
                         </h2>
 
-                        <div className="glass-card p-4">
+                        <div className="p-4 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
                             <div className="space-y-3">
                                 {tomorrowAssignments.map(assignment => {
                                     const role = getRoleDetails(assignment.roleId);
@@ -154,18 +204,22 @@ export default function ParticipantDashboard() {
                                     return (
                                         <div
                                             key={assignment.id}
-                                            className="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-lg"
+                                            className="flex items-center justify-between p-4 bg-green-500/5 border border-green-500/20 rounded-xl"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-2xl">{role?.icon}</span>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center text-2xl shadow-md">
+                                                    {role?.icon}
+                                                </div>
                                                 <div>
-                                                    <div className="font-medium">{role?.name}</div>
+                                                    <div className="font-semibold text-[var(--text-primary)]">{role?.name}</div>
                                                     <div className="text-sm text-[var(--text-muted)]">
-                                                        {shift?.name} ({shift?.startTime} - {shift?.endTime})
+                                                        {shift?.name} • {shift?.startTime} - {shift?.endTime}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <span className="badge badge-available">Confirmed</span>
+                                            <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-600 text-sm font-medium">
+                                                Confirmed
+                                            </span>
                                         </div>
                                     );
                                 })}
