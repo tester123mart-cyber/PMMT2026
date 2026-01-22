@@ -9,6 +9,7 @@ export default function Header() {
     const pathname = usePathname();
 
     const isLogistics = pathname === '/logistics';
+    const isTeams = pathname === '/teams';
     const isOperations = pathname === '/operations';
     const isAdmin = pathname === '/admin';
 
@@ -20,7 +21,7 @@ export default function Header() {
                     <Link href="/" className="flex items-center gap-2">
                         <span className="text-2xl">🏥</span>
                         <span className="font-bold text-lg bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                            PMMT2026
+                            PMMT
                         </span>
                     </Link>
 
@@ -28,7 +29,7 @@ export default function Header() {
                     <nav className="hidden md:flex items-center gap-1">
                         <Link
                             href="/"
-                            className={`nav-link ${!isLogistics && !isOperations && !isAdmin ? 'nav-link-active' : ''}`}
+                            className={`nav-link ${!isLogistics && !isTeams && !isOperations && !isAdmin ? 'nav-link-active' : ''}`}
                         >
                             <span>👤</span>
                             <span>My Shifts</span>
@@ -39,6 +40,13 @@ export default function Header() {
                         >
                             <span>📊</span>
                             <span>Dashboard</span>
+                        </Link>
+                        <Link
+                            href="/teams"
+                            className={`nav-link ${isTeams ? 'nav-link-active' : ''}`}
+                        >
+                            <span>👥</span>
+                            <span>Teams</span>
                         </Link>
                     </nav>
 
@@ -85,11 +93,11 @@ export default function Header() {
                     </div>
                 </div>
 
-                {/* Mobile Navigation - without Admin */}
+                {/* Mobile Navigation */}
                 <nav className="md:hidden flex items-center gap-1 pb-3 overflow-x-auto">
                     <Link
                         href="/"
-                        className={`nav-link flex-shrink-0 ${!isLogistics && !isOperations && !isAdmin ? 'nav-link-active' : ''}`}
+                        className={`nav-link flex-shrink-0 ${!isLogistics && !isTeams && !isOperations && !isAdmin ? 'nav-link-active' : ''}`}
                     >
                         <span>👤</span>
                         <span className="text-sm">Shifts</span>
@@ -101,9 +109,15 @@ export default function Header() {
                         <span>📊</span>
                         <span className="text-sm">Dashboard</span>
                     </Link>
+                    <Link
+                        href="/teams"
+                        className={`nav-link flex-shrink-0 ${isTeams ? 'nav-link-active' : ''}`}
+                    >
+                        <span>👥</span>
+                        <span className="text-sm">Teams</span>
+                    </Link>
                 </nav>
             </div>
         </header>
     );
 }
-

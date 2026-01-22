@@ -13,8 +13,27 @@ export default function DataViewPage() {
         state.clinicDays[0]?.id || ''
     );
 
+    const isAdmin = state.currentUser?.isAdmin === true;
     const clinicalRoles = getClinicalRoles();
     const selectedClinicDay = state.clinicDays.find(d => d.id === selectedClinicDayId);
+
+    // Non-admin view
+    if (!isAdmin) {
+        return (
+            <div className="min-h-screen bg-[var(--bg-primary)]">
+                <Header />
+                <main className="container py-6">
+                    <div className="max-w-xl mx-auto text-center py-16">
+                        <div className="text-6xl mb-4">🔒</div>
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Admin Access Required</h1>
+                        <p className="text-[var(--text-muted)]">
+                            Only administrators can access the Reporting page. Contact an admin if you need access.
+                        </p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[var(--bg-primary)]">
@@ -24,7 +43,7 @@ export default function DataViewPage() {
                 {/* Page Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                        Data View
+                        Reporting
                     </h1>
                     <p className="text-sm text-[var(--text-muted)] mt-1">
                         Flow rate analysis and capacity projections

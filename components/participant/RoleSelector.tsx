@@ -147,7 +147,7 @@ export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSele
                             onClick={handleRemoveAssignment}
                             className="text-xs text-red-400 hover:text-red-300"
                         >
-                            Remove
+                            Unselect
                         </button>
                     </div>
                 </div>

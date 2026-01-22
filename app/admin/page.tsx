@@ -12,6 +12,8 @@ export default function AdminPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState<'clinic-days' | 'participants' | 'flow-rates' | 'data'>('clinic-days');
 
+    const isAdmin = state.currentUser?.isAdmin === true;
+
     const handleExport = () => {
         exportData(state);
     };
@@ -35,6 +37,24 @@ export default function AdminPage() {
             window.location.reload();
         }
     };
+
+    // Non-admin view
+    if (!isAdmin) {
+        return (
+            <div className="min-h-screen bg-[var(--bg-primary)]">
+                <Header />
+                <main className="container py-6">
+                    <div className="max-w-xl mx-auto text-center py-16">
+                        <div className="text-6xl mb-4">🔒</div>
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Admin Access Required</h1>
+                        <p className="text-[var(--text-muted)]">
+                            Only administrators can access this page. Contact an admin if you need access.
+                        </p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[var(--bg-primary)]">
@@ -170,171 +190,173 @@ function ClinicDaysTab() {
     };
 
     return (
-        <div className="glass-card p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-lg font-semibold">Clinic Days</h2>
-                    <p className="text-sm text-[var(--text-muted)]">{state.clinicDays.length} days configured</p>
+        <div className="max-w-3xl mx-auto space-y-6">
+            <div className="glass-card p-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-semibold">📅 Clinic Days</h2>
+                        <p className="text-sm text-[var(--text-muted)] mt-1">{state.clinicDays.length} days configured</p>
+                    </div>
+                    <button
+                        onClick={() => setShowAddForm(!showAddForm)}
+                        className="btn-primary"
+                    >
+                        + Add Day
+                    </button>
                 </div>
-                <button
-                    onClick={() => setShowAddForm(!showAddForm)}
-                    className="btn-primary"
-                >
-                    + Add Day
-                </button>
-            </div>
 
-            {/* Add New Day Form */}
-            {showAddForm && (
-                <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-4">
-                    <h3 className="font-medium text-blue-400">Add New Clinic Day</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm text-[var(--text-muted)] mb-1">Name</label>
-                            <input
-                                type="text"
-                                value={newDayName}
-                                onChange={(e) => setNewDayName(e.target.value)}
-                                placeholder="e.g., Clinic Day 1 - Monday"
-                                className="input-field w-full"
-                            />
-                        </div>
-                        <div className="relative">
-                            <label className="block text-sm text-[var(--text-muted)] mb-1">Date</label>
-                            <button
-                                type="button"
-                                onClick={() => setShowNewDatePicker(!showNewDatePicker)}
-                                className="input-field w-full text-left"
-                            >
-                                {newDayDate ? formatDate(newDayDate) : 'Click to select date...'}
-                            </button>
-                            {showNewDatePicker && (
-                                <div className="absolute z-50 mt-2">
-                                    <DatePicker
-                                        value={newDayDate}
-                                        onChange={(date) => {
-                                            setNewDayDate(date);
-                                            setShowNewDatePicker(false);
-                                        }}
-                                        onClose={() => setShowNewDatePicker(false)}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button onClick={handleAddDay} className="btn-primary" disabled={!newDayName || !newDayDate}>
-                            Add Clinic Day
-                        </button>
-                        <button onClick={() => setShowAddForm(false)} className="btn-secondary">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Existing Days */}
-            <div className="space-y-2">
-                {state.clinicDays.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--text-muted)]">
-                        <div className="text-4xl mb-2">📅</div>
-                        <p>No clinic days configured yet.</p>
-                        <p className="text-sm">Click "Add Day" to get started.</p>
-                    </div>
-                ) : (
-                    state.clinicDays.map(day => {
-                        const isEditing = editingId === day.id;
-                        const isDeleting = deletingId === day.id;
-                        const isShowingDatePicker = showDatePicker === day.id;
-
-                        return (
-                            <div
-                                key={day.id}
-                                className={`p-4 bg-[var(--bg-secondary)] rounded-lg transition-all ${isDeleting ? 'opacity-50 scale-98' : ''}`}
-                            >
-                                {isDeleting ? (
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[var(--text-muted)]">Delete &quot;{day.name}&quot;?</span>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleDeleteDay(day.id)} className="btn-danger text-sm px-3 py-1">
-                                                Yes, Delete
-                                            </button>
-                                            <button onClick={() => setDeletingId(null)} className="btn-secondary text-sm px-3 py-1">
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex-1">
-                                            {/* Name - inline edit */}
-                                            {isEditing ? (
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <input
-                                                        type="text"
-                                                        value={tempName}
-                                                        onChange={(e) => setTempName(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') saveEdit(day);
-                                                            if (e.key === 'Escape') setEditingId(null);
-                                                        }}
-                                                        className="input-field flex-1 py-1"
-                                                        autoFocus
-                                                    />
-                                                    <button onClick={() => saveEdit(day)} className="text-green-400 hover:text-green-300 px-2">
-                                                        ✓
-                                                    </button>
-                                                    <button onClick={() => setEditingId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2">
-                                                        ✕
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    onClick={() => startEditing(day)}
-                                                    className="font-medium cursor-pointer hover:text-blue-400 transition-colors group"
-                                                >
-                                                    {day.name}
-                                                    <span className="text-xs text-[var(--text-muted)] ml-2 opacity-0 group-hover:opacity-100">
-                                                        ✏️ click to rename
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {/* Date with calendar picker */}
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowDatePicker(isShowingDatePicker ? null : day.id)}
-                                                    className="text-sm text-[var(--text-muted)] hover:text-blue-400 transition-colors"
-                                                >
-                                                    📅 {formatDate(day.date)}
-                                                </button>
-                                                {isShowingDatePicker && (
-                                                    <div className="absolute z-50 mt-2 left-0">
-                                                        <DatePicker
-                                                            value={day.date}
-                                                            onChange={(newDate) => updateDate(day, newDate)}
-                                                            onClose={() => setShowDatePicker(null)}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Delete button */}
-                                        <button
-                                            onClick={() => setDeletingId(day.id)}
-                                            className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-500/10"
-                                            title="Delete this clinic day"
-                                        >
-                                            🗑️
-                                        </button>
+                {/* Add New Day Form */}
+                {showAddForm && (
+                    <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg space-y-4">
+                        <h3 className="font-medium text-blue-400">Add New Clinic Day</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm text-[var(--text-muted)] mb-1">Name</label>
+                                <input
+                                    type="text"
+                                    value={newDayName}
+                                    onChange={(e) => setNewDayName(e.target.value)}
+                                    placeholder="e.g., Clinic Day 1 - Monday"
+                                    className="input-field w-full"
+                                />
+                            </div>
+                            <div className="relative">
+                                <label className="block text-sm text-[var(--text-muted)] mb-1">Date</label>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewDatePicker(!showNewDatePicker)}
+                                    className="input-field w-full text-left"
+                                >
+                                    {newDayDate ? formatDate(newDayDate) : 'Click to select date...'}
+                                </button>
+                                {showNewDatePicker && (
+                                    <div className="absolute z-50 mt-2">
+                                        <DatePicker
+                                            value={newDayDate}
+                                            onChange={(date) => {
+                                                setNewDayDate(date);
+                                                setShowNewDatePicker(false);
+                                            }}
+                                            onClose={() => setShowNewDatePicker(false)}
+                                        />
                                     </div>
                                 )}
                             </div>
-                        );
-                    })
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={handleAddDay} className="btn-primary" disabled={!newDayName || !newDayDate}>
+                                Add Clinic Day
+                            </button>
+                            <button onClick={() => setShowAddForm(false)} className="btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 )}
+
+                {/* Existing Days */}
+                <div className="space-y-2">
+                    {state.clinicDays.length === 0 ? (
+                        <div className="text-center py-8 text-[var(--text-muted)]">
+                            <div className="text-4xl mb-2">📅</div>
+                            <p>No clinic days configured yet.</p>
+                            <p className="text-sm">Click "Add Day" to get started.</p>
+                        </div>
+                    ) : (
+                        state.clinicDays.map(day => {
+                            const isEditing = editingId === day.id;
+                            const isDeleting = deletingId === day.id;
+                            const isShowingDatePicker = showDatePicker === day.id;
+
+                            return (
+                                <div
+                                    key={day.id}
+                                    className={`p-4 bg-[var(--bg-secondary)] rounded-lg transition-all ${isDeleting ? 'opacity-50 scale-98' : ''}`}
+                                >
+                                    {isDeleting ? (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[var(--text-muted)]">Delete &quot;{day.name}&quot;?</span>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => handleDeleteDay(day.id)} className="btn-danger text-sm px-3 py-1">
+                                                    Yes, Delete
+                                                </button>
+                                                <button onClick={() => setDeletingId(null)} className="btn-secondary text-sm px-3 py-1">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex-1">
+                                                {/* Name - inline edit */}
+                                                {isEditing ? (
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <input
+                                                            type="text"
+                                                            value={tempName}
+                                                            onChange={(e) => setTempName(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') saveEdit(day);
+                                                                if (e.key === 'Escape') setEditingId(null);
+                                                            }}
+                                                            className="input-field flex-1 py-1"
+                                                            autoFocus
+                                                        />
+                                                        <button onClick={() => saveEdit(day)} className="text-green-400 hover:text-green-300 px-2">
+                                                            ✓
+                                                        </button>
+                                                        <button onClick={() => setEditingId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2">
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        onClick={() => startEditing(day)}
+                                                        className="font-medium cursor-pointer hover:text-blue-400 transition-colors group"
+                                                    >
+                                                        {day.name}
+                                                        <span className="text-xs text-[var(--text-muted)] ml-2 opacity-0 group-hover:opacity-100">
+                                                            ✏️ click to rename
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Date with calendar picker */}
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowDatePicker(isShowingDatePicker ? null : day.id)}
+                                                        className="text-sm text-[var(--text-muted)] hover:text-blue-400 transition-colors"
+                                                    >
+                                                        📅 {formatDate(day.date)}
+                                                    </button>
+                                                    {isShowingDatePicker && (
+                                                        <div className="absolute z-50 mt-2 left-0">
+                                                            <DatePicker
+                                                                value={day.date}
+                                                                onChange={(newDate) => updateDate(day, newDate)}
+                                                                onClose={() => setShowDatePicker(null)}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Delete button */}
+                                            <button
+                                                onClick={() => setDeletingId(day.id)}
+                                                className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-500/10"
+                                                title="Delete this clinic day"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -344,6 +366,7 @@ function ParticipantsTab() {
     const { state, dispatch } = useApp();
     const [newParticipant, setNewParticipant] = useState({ name: '', email: '' });
     const [search, setSearch] = useState('');
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const filteredParticipants = state.participants.filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -373,46 +396,109 @@ function ParticipantsTab() {
         });
     };
 
+    const removeParticipant = (participantId: string) => {
+        const updatedParticipants = state.participants.filter(p => p.id !== participantId);
+        const updatedAssignments = state.assignments.filter(a => a.participantId !== participantId);
+        dispatch({
+            type: 'IMPORT_STATE',
+            payload: { ...state, participants: updatedParticipants, assignments: updatedAssignments },
+        });
+        setDeletingId(null);
+    };
+
     return (
-        <div className="glass-card p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Participants ({state.participants.length})</h2>
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search..."
-                    className="input-field w-48"
-                />
+        <div className="max-w-3xl mx-auto space-y-6">
+            {/* Header Card */}
+            <div className="glass-card p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold">👥 Participants</h2>
+                        <p className="text-sm text-[var(--text-muted)] mt-1">
+                            {state.participants.length} registered participants
+                        </p>
+                    </div>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="🔍 Search..."
+                        className="input-field w-full sm:w-64"
+                    />
+                </div>
             </div>
 
             {/* Participant List */}
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredParticipants.map(p => (
-                    <div key={p.id} className="flex items-center justify-between p-3 bg-[var(--bg-secondary)] rounded-lg">
-                        <div>
-                            <div className="font-medium">{p.name}</div>
-                            <div className="text-sm text-[var(--text-muted)]">{p.email}</div>
+            <div className="glass-card p-6">
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                    {filteredParticipants.length === 0 ? (
+                        <div className="text-center py-8 text-[var(--text-muted)]">
+                            <div className="text-4xl mb-2">👤</div>
+                            <p>No participants found</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => toggleAdmin(p)}
-                                className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${p.isAdmin
-                                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                                        : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'
-                                    }`}
+                    ) : (
+                        filteredParticipants.map(p => (
+                            <div
+                                key={p.id}
+                                className={`group flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-all ${deletingId === p.id ? 'ring-2 ring-red-500' : ''}`}
                             >
-                                {p.isAdmin ? '✓ Admin' : 'Make Admin'}
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                                {deletingId === p.id ? (
+                                    <div className="flex items-center justify-between w-full">
+                                        <span className="text-sm text-[var(--text-muted)]">Remove &quot;{p.name}&quot;?</span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => removeParticipant(p.id)}
+                                                className="px-3 py-1 text-xs font-medium rounded-lg bg-red-500 text-white hover:bg-red-600"
+                                            >
+                                                Yes, Remove
+                                            </button>
+                                            <button
+                                                onClick={() => setDeletingId(null)}
+                                                className="px-3 py-1 text-xs font-medium rounded-lg bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                                                {p.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <div className="font-medium">{p.name}</div>
+                                                <div className="text-sm text-[var(--text-muted)]">{p.email}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => toggleAdmin(p)}
+                                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${p.isAdmin
+                                                    ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                                                    : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'
+                                                    }`}
+                                            >
+                                                {p.isAdmin ? '✓ Admin' : 'Make Admin'}
+                                            </button>
+                                            <button
+                                                onClick={() => setDeletingId(p.id)}
+                                                className="px-2 py-1.5 text-xs rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
 
-            {/* Add Participant */}
-            <div className="pt-4 border-t border-[var(--border-subtle)]">
-                <h3 className="text-sm font-medium text-[var(--text-muted)] mb-3">Add Participant</h3>
-                <div className="flex gap-3">
+            {/* Add Participant Card */}
+            <div className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4">➕ Add New Participant</h3>
+                <div className="flex flex-col sm:flex-row gap-3">
                     <input
                         type="text"
                         value={newParticipant.name}
@@ -424,11 +510,15 @@ function ParticipantsTab() {
                         type="email"
                         value={newParticipant.email}
                         onChange={(e) => setNewParticipant({ ...newParticipant, email: e.target.value })}
-                        placeholder="Email"
+                        placeholder="Email Address"
                         className="input-field flex-1"
                     />
-                    <button onClick={handleAddParticipant} className="btn-primary">
-                        Add
+                    <button
+                        onClick={handleAddParticipant}
+                        className="btn-primary whitespace-nowrap"
+                        disabled={!newParticipant.name || !newParticipant.email}
+                    >
+                        Add Participant
                     </button>
                 </div>
             </div>
