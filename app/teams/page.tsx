@@ -1,11 +1,97 @@
 'use client';
 
+import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
 import { SHIFTS } from '@/lib/data';
 
+// Role responsibilities data
+const ROLE_RESPONSIBILITIES: Record<string, { description: string; duties: string[] }> = {
+    medical: {
+        description: 'Provide medical consultations and treatment to patients.',
+        duties: [
+            'Conduct patient assessments and examinations',
+            'Diagnose and treat common medical conditions',
+            'Prescribe medications as appropriate',
+            'Refer complex cases to appropriate specialists',
+            'Document patient encounters accurately',
+        ],
+    },
+    nursing: {
+        description: 'Support medical team with patient care and vital monitoring.',
+        duties: [
+            'Take and record patient vital signs',
+            'Assist doctors during consultations',
+            'Administer medications and vaccinations',
+            'Provide wound care and dressing changes',
+            'Educate patients on medication usage',
+        ],
+    },
+    optometry: {
+        description: 'Provide eye examinations and vision correction services.',
+        duties: [
+            'Conduct comprehensive eye examinations',
+            'Measure visual acuity and prescribe corrective lenses',
+            'Screen for common eye conditions',
+            'Fit and dispense eyeglasses',
+            'Provide eye health education',
+        ],
+    },
+    dentistry: {
+        description: 'Provide dental care including extractions and basic treatments.',
+        duties: [
+            'Perform dental examinations and assessments',
+            'Conduct tooth extractions when necessary',
+            'Provide basic restorative treatments',
+            'Offer oral hygiene education',
+            'Manage dental emergencies',
+        ],
+    },
+    pharmacy: {
+        description: 'Manage medication dispensing and patient counseling.',
+        duties: [
+            'Dispense prescribed medications accurately',
+            'Counsel patients on proper medication use',
+            'Manage medication inventory',
+            'Check for drug interactions',
+            'Maintain dispensing records',
+        ],
+    },
+    registration: {
+        description: 'Handle patient registration and flow management.',
+        duties: [
+            'Register incoming patients',
+            'Collect and record patient demographics',
+            'Issue patient tickets and numbers',
+            'Direct patients to appropriate stations',
+            'Manage patient queue flow',
+        ],
+    },
+    triage: {
+        description: 'Assess patient urgency and prioritize care.',
+        duties: [
+            'Conduct initial patient assessments',
+            'Prioritize patients based on urgency',
+            'Take and record vital signs',
+            'Direct patients to appropriate services',
+            'Identify emergency cases for immediate care',
+        ],
+    },
+    logistics: {
+        description: 'Coordinate supplies, equipment, and clinic operations.',
+        duties: [
+            'Manage medical supplies and inventory',
+            'Coordinate equipment setup and breakdown',
+            'Ensure stations are properly stocked',
+            'Handle equipment issues and repairs',
+            'Support general clinic operations',
+        ],
+    },
+};
+
 export default function TeamsPage() {
     const { state } = useApp();
+    const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
 
     const getParticipantName = (id: string) => {
         return state.participants.find(p => p.id === id)?.name || 'Unknown';
@@ -23,89 +109,105 @@ export default function TeamsPage() {
         return SHIFTS.find(s => s.id === id)?.name || '';
     };
 
+    const selectedRole = state.roles.find(r => r.id === selectedRoleId);
+    const selectedRoleInfo = selectedRoleId ? ROLE_RESPONSIBILITIES[selectedRoleId] : null;
+    const selectedRoleAssignments = selectedRoleId ? getAssignmentsForRole(selectedRoleId) : [];
+    const uniqueParticipants = [...new Set(selectedRoleAssignments.map(a => a.participantId))];
+
     return (
         <div className="min-h-screen bg-[var(--bg-primary)]">
             <Header />
 
-            <main className="container py-6">
-                {/* Page Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                        Teams
-                    </h1>
-                    <p className="text-sm text-[var(--text-muted)] mt-1">
-                        View all teams and their assigned members
-                    </p>
+            <main className="container py-4">
+                {/* Teams Sub-header Navigation */}
+                <div className="flex flex-wrap gap-2 justify-center py-3 border-b border-[var(--border-subtle)] mb-6">
+                    {state.roles.map(role => (
+                        <button
+                            key={role.id}
+                            onClick={() => setSelectedRoleId(selectedRoleId === role.id ? null : role.id)}
+                            className={`
+                                px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5
+                                ${selectedRoleId === role.id
+                                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                                }
+                            `}
+                        >
+                            <span>{role.icon}</span>
+                            <span>{role.name}</span>
+                        </button>
+                    ))}
                 </div>
 
-                {/* Teams Grid */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {state.roles.map(role => {
-                        const assignments = getAssignmentsForRole(role.id);
-                        const uniqueParticipants = [...new Set(assignments.map(a => a.participantId))];
+                {/* Selected Role Content */}
+                {selectedRole && selectedRoleInfo ? (
+                    <div className="max-w-2xl mx-auto animate-fade-in">
+                        {/* Role Header */}
+                        <div className="text-center mb-6">
+                            <span className="text-4xl">{selectedRole.icon}</span>
+                            <h2 className="text-xl font-semibold text-[var(--text-primary)] mt-2">{selectedRole.name}</h2>
+                            <p className="text-sm text-[var(--text-muted)] mt-1">{selectedRoleInfo.description}</p>
+                        </div>
 
-                        return (
-                            <div
-                                key={role.id}
-                                className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
-                            >
-                                {/* Role Header */}
-                                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--border-subtle)]">
-                                    <span className="text-2xl">{role.icon}</span>
-                                    <div>
-                                        <h3 className="font-semibold text-[var(--text-primary)]">{role.name}</h3>
-                                        <p className="text-xs text-[var(--text-muted)]">
-                                            {uniqueParticipants.length} member{uniqueParticipants.length !== 1 ? 's' : ''} assigned
-                                        </p>
-                                    </div>
-                                </div>
+                        {/* Responsibilities */}
+                        <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6">
+                            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-3">
+                                Key Responsibilities
+                            </h3>
+                            <ul className="space-y-2">
+                                {selectedRoleInfo.duties.map((duty, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+                                        <span className="text-blue-500 mt-0.5">•</span>
+                                        <span>{duty}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
 
-                                {/* Team Members */}
-                                {uniqueParticipants.length === 0 ? (
-                                    <p className="text-sm text-[var(--text-muted)] text-center py-4">
-                                        No members assigned yet
-                                    </p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {uniqueParticipants.map(participantId => {
-                                            const participantAssignments = assignments.filter(a => a.participantId === participantId);
+                        {/* Team Members */}
+                        <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-3">
+                                Team Members ({uniqueParticipants.length})
+                            </h3>
+                            {uniqueParticipants.length === 0 ? (
+                                <p className="text-sm text-[var(--text-muted)] text-center py-4">
+                                    No members assigned to this role yet
+                                </p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {uniqueParticipants.map(participantId => {
+                                        const participantAssignments = selectedRoleAssignments.filter(a => a.participantId === participantId);
 
-                                            return (
-                                                <div
-                                                    key={participantId}
-                                                    className="p-3 rounded-lg bg-[var(--bg-card)]"
-                                                >
-                                                    <div className="font-medium text-sm text-[var(--text-primary)]">
+                                        return (
+                                            <div
+                                                key={participantId}
+                                                className="p-3 rounded-lg bg-[var(--bg-card)] flex items-center justify-between"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-medium">
+                                                        {getParticipantName(participantId).charAt(0)}
+                                                    </div>
+                                                    <span className="text-sm font-medium text-[var(--text-primary)]">
                                                         {getParticipantName(participantId)}
-                                                    </div>
-                                                    <div className="text-xs text-[var(--text-muted)] mt-1">
-                                                        {participantAssignments.map((a, idx) => (
-                                                            <span key={a.id}>
-                                                                {getClinicDayName(a.clinicDayId)} - {getShiftName(a.shiftId)}
-                                                                {idx < participantAssignments.length - 1 ? ', ' : ''}
-                                                            </span>
-                                                        ))}
-                                                    </div>
+                                                    </span>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Summary */}
-                <div className="mt-8 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                    <div className="flex items-center gap-3">
-                        <span className="text-xl">👥</span>
-                        <div className="text-sm text-[var(--text-secondary)]">
-                            <strong className="text-[var(--text-primary)]">{state.participants.length}</strong> total participants across{' '}
-                            <strong className="text-[var(--text-primary)]">{state.roles.length}</strong> teams
+                                                <div className="text-xs text-[var(--text-muted)]">
+                                                    {participantAssignments.length} shift{participantAssignments.length !== 1 ? 's' : ''}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="text-center py-16">
+                        <div className="text-5xl mb-4">👆</div>
+                        <p className="text-[var(--text-primary)] font-medium">Select a team above</p>
+                        <p className="text-sm text-[var(--text-muted)] mt-1">View responsibilities and team members</p>
+                    </div>
+                )}
             </main>
         </div>
     );

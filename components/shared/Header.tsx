@@ -74,13 +74,15 @@ export default function Header() {
                                     Reporting
                                 </Link>
 
-                                {/* Admin link */}
-                                <Link
-                                    href="/admin"
-                                    className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                                >
-                                    Admin
-                                </Link>
+                                {/* Admin link - only for authorized email */}
+                                {state.currentUser.email === 'ordersinformation123@gmail.com' && (
+                                    <Link
+                                        href="/admin"
+                                        className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                                    >
+                                        Admin
+                                    </Link>
+                                )}
 
                                 <button
                                     onClick={logout}
