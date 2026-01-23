@@ -3,23 +3,41 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
-import { SHIFTS } from '@/lib/data';
 
-// Role responsibilities data - TO BE DEVELOPED
-const ROLE_RESPONSIBILITIES: Record<string, { description: string; duties: string[] }> = {
-    medical: { description: '', duties: [] },
-    nursing: { description: '', duties: [] },
-    optometry: { description: '', duties: [] },
-    dentistry: { description: '', duties: [] },
-    pharmacy: { description: '', duties: [] },
-    registration: { description: '', duties: [] },
-    triage: { description: '', duties: [] },
-    logistics: { description: '', duties: [] },
-};
+// Medication entry interface
+interface MedicationEntry {
+    name: string;
+    dose: string;
+    frequency: string;
+}
+
+// Patient record interface
+interface PatientRecord {
+    id: string;
+    patientName: string;
+    medications: MedicationEntry[];
+    followUps: string;
+    comments: string;
+    createdAt: Date;
+    createdBy: {
+        name: string;
+        email: string;
+    };
+}
 
 export default function TeamsPage() {
     const { state } = useApp();
     const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+
+    // Clinical form state
+    const [patientName, setPatientName] = useState('');
+    const [medications, setMedications] = useState<MedicationEntry[]>([{ name: '', dose: '', frequency: '' }]);
+    const [followUps, setFollowUps] = useState('');
+    const [comments, setComments] = useState('');
+
+    // Patient records CRM
+    const [patientRecords, setPatientRecords] = useState<PatientRecord[]>([]);
+    const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
 
     const getParticipantName = (id: string) => {
         return state.participants.find(p => p.id === id)?.name || 'Unknown';
@@ -29,27 +47,64 @@ export default function TeamsPage() {
         return state.assignments.filter(a => a.roleId === roleId);
     };
 
-    const getClinicDayName = (id: string) => {
-        return state.clinicDays.find(d => d.id === id)?.name || '';
-    };
-
-    const getShiftName = (id: string) => {
-        return SHIFTS.find(s => s.id === id)?.name || '';
-    };
-
     const selectedRole = state.roles.find(r => r.id === selectedRoleId);
-    const selectedRoleInfo = selectedRoleId ? ROLE_RESPONSIBILITIES[selectedRoleId] : null;
     const selectedRoleAssignments = selectedRoleId ? getAssignmentsForRole(selectedRoleId) : [];
     const uniqueParticipants = [...new Set(selectedRoleAssignments.map(a => a.participantId))];
 
     // Sort roles: Clinical first (alphabetically), then Support (alphabetically)
     const sortedRoles = [...state.roles].sort((a, b) => {
-        // Clinical roles come first
         if (a.category === 'clinical' && b.category !== 'clinical') return -1;
         if (a.category !== 'clinical' && b.category === 'clinical') return 1;
-        // Within same category, sort alphabetically
         return a.name.localeCompare(b.name);
     });
+
+    // Add medication row
+    const addMedication = () => {
+        setMedications([...medications, { name: '', dose: '', frequency: '' }]);
+    };
+
+    // Update medication
+    const updateMedication = (index: number, field: keyof MedicationEntry, value: string) => {
+        const updated = [...medications];
+        updated[index][field] = value;
+        setMedications(updated);
+    };
+
+    // Remove medication
+    const removeMedication = (index: number) => {
+        if (medications.length > 1) {
+            setMedications(medications.filter((_, i) => i !== index));
+        }
+    };
+
+    // Save patient record
+    const savePatientRecord = () => {
+        if (!patientName.trim() || !state.currentUser) return;
+
+        const newRecord: PatientRecord = {
+            id: Date.now().toString(),
+            patientName: patientName.trim(),
+            medications: medications.filter(m => m.name.trim()),
+            followUps,
+            comments,
+            createdAt: new Date(),
+            createdBy: {
+                name: state.currentUser.name,
+                email: state.currentUser.email
+            }
+        };
+
+        setPatientRecords([newRecord, ...patientRecords]);
+
+        // Reset form
+        setPatientName('');
+        setMedications([{ name: '', dose: '', frequency: '' }]);
+        setFollowUps('');
+        setComments('');
+    };
+
+    // Check if this is the Medical team
+    const isMedicalTeam = selectedRoleId === 'medical';
 
     return (
         <div className="min-h-screen bg-[var(--bg-primary)]">
@@ -81,29 +136,211 @@ export default function TeamsPage() {
                 </div>
 
                 {/* Selected Role Content */}
-                {selectedRole && selectedRoleInfo ? (
+                {selectedRole ? (
                     <div className="max-w-2xl mx-auto animate-fade-in">
                         {/* Role Header */}
                         <div className="text-center mb-6">
                             <span className="text-4xl">{selectedRole.icon}</span>
                             <h2 className="text-xl font-semibold text-[var(--text-primary)] mt-2">{selectedRole.name}</h2>
-                            <p className="text-sm text-[var(--text-muted)] mt-1">{selectedRoleInfo.description}</p>
                         </div>
 
-                        {/* Responsibilities */}
-                        <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6">
-                            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-3">
-                                Key Responsibilities
-                            </h3>
-                            <ul className="space-y-2">
-                                {selectedRoleInfo.duties.map((duty, idx) => (
-                                    <li key={idx} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-                                        <span className="text-blue-500 mt-0.5">•</span>
-                                        <span>{duty}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {/* Clinical Form - Only for Medical Team */}
+                        {isMedicalTeam && (
+                            <>
+                                {/* All-in-One Clinical Form */}
+                                <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6">
+                                    <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-4">
+                                        📋 New Patient Record
+                                    </h3>
+
+                                    {/* Patient Name */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                            Patient Name / ID
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={patientName}
+                                            onChange={(e) => setPatientName(e.target.value)}
+                                            placeholder="Enter patient name or identifier"
+                                            className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                        />
+                                    </div>
+
+                                    {/* Medication Prescription */}
+                                    <div className="mb-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="text-sm font-medium text-[var(--text-secondary)]">
+                                                💊 Medication Prescription
+                                            </label>
+                                            <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded-full">
+                                                Link to Pharmacy Stocktake →
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {medications.map((med, index) => (
+                                                <div key={index} className="flex gap-2 items-center">
+                                                    <input
+                                                        type="text"
+                                                        value={med.name}
+                                                        onChange={(e) => updateMedication(index, 'name', e.target.value)}
+                                                        placeholder="Drug name"
+                                                        className="flex-1 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={med.dose}
+                                                        onChange={(e) => updateMedication(index, 'dose', e.target.value)}
+                                                        placeholder="Dose"
+                                                        className="w-24 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={med.frequency}
+                                                        onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
+                                                        placeholder="Frequency"
+                                                        className="w-28 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                    {medications.length > 1 && (
+                                                        <button
+                                                            onClick={() => removeMedication(index)}
+                                                            className="text-red-500 hover:bg-red-500/10 p-1 rounded"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <button
+                                            onClick={addMedication}
+                                            className="mt-2 text-sm text-blue-500 hover:underline"
+                                        >
+                                            + Add Medication
+                                        </button>
+                                    </div>
+
+                                    {/* Follow-ups */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                            📅 Follow-up(s) Required
+                                        </label>
+                                        <textarea
+                                            value={followUps}
+                                            onChange={(e) => setFollowUps(e.target.value)}
+                                            placeholder="Enter required follow-up actions, referrals, or appointments..."
+                                            rows={2}
+                                            className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Comments */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                            📝 Comments / Notes
+                                        </label>
+                                        <textarea
+                                            value={comments}
+                                            onChange={(e) => setComments(e.target.value)}
+                                            placeholder="Additional notes, observations, or comments..."
+                                            rows={2}
+                                            className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Save Button */}
+                                    <button
+                                        onClick={savePatientRecord}
+                                        disabled={!patientName.trim()}
+                                        className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Save Patient Record
+                                    </button>
+                                </div>
+
+                                {/* Patient CRM - Previously Seen Patients */}
+                                <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6">
+                                    <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-4">
+                                        👥 Patient Records ({patientRecords.length})
+                                    </h3>
+
+                                    {patientRecords.length === 0 ? (
+                                        <div className="text-center py-6 text-[var(--text-muted)]">
+                                            <div className="text-3xl mb-2">📋</div>
+                                            <p className="text-sm">No patient records yet</p>
+                                            <p className="text-xs">Save a patient record above to see it here</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {patientRecords.map(record => (
+                                                <div
+                                                    key={record.id}
+                                                    onClick={() => setSelectedPatient(selectedPatient?.id === record.id ? null : record)}
+                                                    className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] cursor-pointer hover:border-blue-500/50 transition-colors"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white text-xs font-medium">
+                                                                {record.patientName.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-sm font-medium text-[var(--text-primary)]">
+                                                                    {record.patientName}
+                                                                </span>
+                                                                <p className="text-xs text-[var(--text-muted)]">
+                                                                    {record.createdAt.toLocaleDateString()} • {record.medications.length} medication(s)
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[var(--text-muted)]">
+                                                            {selectedPatient?.id === record.id ? '▼' : '▶'}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Expanded View */}
+                                                    {selectedPatient?.id === record.id && (
+                                                        <div className="mt-3 pt-3 border-t border-[var(--border-subtle)] space-y-2 text-sm">
+                                                            {record.medications.length > 0 && (
+                                                                <div>
+                                                                    <span className="font-medium text-[var(--text-secondary)]">💊 Medications:</span>
+                                                                    <ul className="ml-4 mt-1 space-y-1">
+                                                                        {record.medications.map((med, i) => (
+                                                                            <li key={i} className="text-[var(--text-muted)]">
+                                                                                {med.name} - {med.dose} ({med.frequency})
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                            {record.followUps && (
+                                                                <div>
+                                                                    <span className="font-medium text-[var(--text-secondary)]">📅 Follow-up:</span>
+                                                                    <p className="text-[var(--text-muted)] ml-4">{record.followUps}</p>
+                                                                </div>
+                                                            )}
+                                                            {record.comments && (
+                                                                <div>
+                                                                    <span className="font-medium text-[var(--text-secondary)]">📝 Notes:</span>
+                                                                    <p className="text-[var(--text-muted)] ml-4">{record.comments}</p>
+                                                                </div>
+                                                            )}
+                                                            <div className="pt-2 mt-2 border-t border-[var(--border-subtle)]">
+                                                                <span className="font-medium text-[var(--text-secondary)]">👤 Recorded by:</span>
+                                                                <p className="text-[var(--text-muted)] ml-4">
+                                                                    {record.createdBy.name} ({record.createdBy.email})
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
 
                         {/* Team Members */}
                         <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
@@ -146,7 +383,7 @@ export default function TeamsPage() {
                     <div className="text-center py-16">
                         <div className="text-5xl mb-4">👆</div>
                         <p className="text-[var(--text-primary)] font-medium">Select a team above</p>
-                        <p className="text-sm text-[var(--text-muted)] mt-1">View responsibilities and team members</p>
+                        <p className="text-sm text-[var(--text-muted)] mt-1">View team members and clinical forms</p>
                     </div>
                 )}
             </main>
