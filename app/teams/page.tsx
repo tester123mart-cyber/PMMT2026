@@ -120,16 +120,16 @@ export default function TeamsPage() {
 
             <main className="container py-4">
                 {/* Teams Sub-header Navigation */}
-                <div className="flex flex-wrap gap-2 justify-center py-3 border-b border-[var(--border-subtle)] mb-6">
+                <div className="flex flex-wrap gap-4 justify-center py-3 border-b border-[var(--border-subtle)] mb-6">
                     {state.roles.map(role => (
                         <button
                             key={role.id}
                             onClick={() => setSelectedRoleId(selectedRoleId === role.id ? null : role.id)}
                             className={`
-                                px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5
+                                text-sm transition-all flex items-center gap-1.5
                                 ${selectedRoleId === role.id
-                                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                                    ? 'text-blue-500 font-semibold'
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                                 }
                             `}
                         >

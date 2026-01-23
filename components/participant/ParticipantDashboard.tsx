@@ -103,8 +103,38 @@ export default function ParticipantDashboard() {
                 {/* Choose Shifts */}
                 <section className="mt-10">
                     <h2 className="text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide mb-4">
-                        Select a Shift
+                        Select Clinic Day
                     </h2>
+
+                    {/* Clinic Day Tabs */}
+                    <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                        {state.clinicDays.map(day => (
+                            <button
+                                key={day.id}
+                                onClick={() => {
+                                    setSelectedClinicDayId(day.id);
+                                    setSelectedShiftId(null);
+                                }}
+                                className={`
+                                    px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
+                                    ${selectedClinicDayId === day.id
+                                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                                        : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                                    }
+                                `}
+                            >
+                                <div>{day.name}</div>
+                                <div className={`text-xs ${selectedClinicDayId === day.id ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                                    {formatDate(day.date)}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    <h2 className="text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide mb-4">
+                        Select Shift for {selectedClinicDay?.name || 'Selected Day'}
+                    </h2>
+
                     {/* Shift buttons */}
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         {SHIFTS.map(shift => {
