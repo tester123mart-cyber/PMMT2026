@@ -71,38 +71,28 @@ export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSele
         const role = state.roles.find(r => r.id === roleId);
         if (!role) return null;
 
-        const status = getRoleStatus(roleId);
-        const isFull = status.isFull;
         const isMyRole = myShiftAssignment?.roleId === roleId;
-        const needsHelp = understaffedRoleIds.has(roleId);
-        const fillPercent = status.capacity > 0 ? (status.currentCount / status.capacity) * 100 : 100;
 
         return (
             <button
                 key={roleId}
                 onClick={() => handleRoleSelect(roleId)}
-                disabled={isFull && !isMyRole}
                 className={`
-          role-card text-left w-full
-          ${selectedRoleId === roleId ? 'role-card-selected' : ''}
-          ${isFull && !isMyRole ? 'role-card-disabled' : ''}
-          ${isMyRole ? 'ring-2 ring-green-500' : ''}
-        `}
+                    p-4 rounded-xl text-left w-full transition-all border
+                    ${selectedRoleId === roleId
+                        ? 'bg-blue-500/10 border-blue-500'
+                        : 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] hover:border-blue-500/50'
+                    }
+                    ${isMyRole ? 'ring-2 ring-green-500' : ''}
+                `}
             >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <span className="text-2xl">{role.icon}</span>
-                        <div>
-                            <div className="font-medium text-[var(--text-primary)]">{role.name}</div>
-                        </div>
+                        <span className="font-medium text-[var(--text-primary)]">{role.name}</span>
                     </div>
-                    {isMyRole && <span className="badge badge-available">Your Role</span>}
-                    {needsHelp && !isMyRole && !isFull && (
-                        <span className="badge badge-help-needed">Help Needed</span>
-                    )}
-                    {isFull && !isMyRole && <span className="badge badge-full">Full</span>}
+                    {isMyRole && <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-500 font-medium">Your Role</span>}
                 </div>
-
             </button>
         );
     };

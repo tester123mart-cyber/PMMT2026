@@ -39,7 +39,7 @@ export default function Header() {
                             className={`nav-link ${isLogistics ? 'nav-link-active' : ''}`}
                         >
                             <span>📊</span>
-                            <span>Dashboard</span>
+                            <span>Schedule</span>
                         </Link>
                         <Link
                             href="/teams"
@@ -109,7 +109,7 @@ export default function Header() {
                         className={`nav-link flex-shrink-0 ${isLogistics ? 'nav-link-active' : ''}`}
                     >
                         <span>📊</span>
-                        <span className="text-sm">Dashboard</span>
+                        <span className="text-sm">Schedule</span>
                     </Link>
                     <Link
                         href="/teams"
