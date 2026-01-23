@@ -26,6 +26,14 @@ export default function PeoplePreview({
     const shift = SHIFTS.find(s => s.id === shiftId);
     const status = getRoleShiftStatus(state, clinicDayId, shiftId, roleId);
 
+    // Check if current user is already assigned to this exact role/shift
+    const isAlreadySelected = state.assignments.some(
+        a => a.participantId === state.currentUser?.id &&
+            a.clinicDayId === clinicDayId &&
+            a.shiftId === shiftId &&
+            a.roleId === roleId
+    );
+
     // Get initials for avatar
     const getInitials = (name: string) => {
         return name
@@ -47,23 +55,6 @@ export default function PeoplePreview({
                         <p className="text-sm text-[var(--text-muted)]">
                             {shift?.name} • {shift?.startTime} - {shift?.endTime}
                         </p>
-                    </div>
-                </div>
-
-                {/* Capacity Info */}
-                <div className="mb-6 p-4 bg-[var(--bg-card)] rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-[var(--text-muted)]">Capacity</span>
-                        <span className="font-semibold">
-                            {status.currentCount} / {status.capacity}
-                        </span>
-                    </div>
-                    <div className="capacity-bar">
-                        <div
-                            className={`capacity-bar-fill ${status.isFull ? 'green' : status.currentCount > 0 ? 'yellow' : 'red'
-                                }`}
-                            style={{ width: `${Math.min((status.currentCount / status.capacity) * 100, 100)}%` }}
-                        />
                     </div>
                 </div>
 
@@ -93,17 +84,25 @@ export default function PeoplePreview({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t border-[var(--border-subtle)]">
-                    <button onClick={onCancel} className="btn-secondary flex-1">
+                <div className="flex gap-3 pt-4">
+                    <button onClick={onCancel} className="btn-secondary flex-1 py-3">
                         Cancel
                     </button>
-                    <button
-                        onClick={onConfirm}
-                        className="btn-primary flex-1"
-                        disabled={status.isFull}
-                    >
-                        {status.isFull ? 'Full' : 'Confirm Selection'}
-                    </button>
+                    {isAlreadySelected ? (
+                        <button
+                            onClick={onConfirm}
+                            className="flex-1 py-3 px-4 rounded-xl font-medium transition-all bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20"
+                        >
+                            Unselect
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onConfirm}
+                            className="btn-primary flex-1 py-3"
+                        >
+                            Confirm Selection
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

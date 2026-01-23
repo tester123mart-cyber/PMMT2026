@@ -20,8 +20,8 @@ export default function Header() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
                         <span className="text-2xl">🏥</span>
-                        <span className="font-bold text-lg bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                            PMMT
+                        <span className="font-bold text-lg bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent" style={{ fontFamily: "'Inter', sans-serif" }}>
+                            PMMT2026
                         </span>
                     </Link>
 

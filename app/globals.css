@@ -65,13 +65,33 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 body {
   color: var(--text-primary);
   background: var(--bg-primary);
   min-height: 100vh;
+}
+
+/* Typography - All using Inter */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-inter), 'Inter', sans-serif;
+}
+
+/* Navigation and UI elements */
+.nav-link,
+button,
+input,
+select,
+label {
+  font-family: var(--font-inter), 'Inter', sans-serif;
 }
 
 /* Glassmorphism Card */
