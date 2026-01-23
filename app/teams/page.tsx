@@ -169,14 +169,9 @@ export default function TeamsPage() {
 
                                     {/* Medication Prescription */}
                                     <div className="mb-4">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <label className="text-sm font-medium text-[var(--text-secondary)]">
-                                                💊 Medication Prescription
-                                            </label>
-                                            <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded-full">
-                                                Link to Pharmacy Stocktake →
-                                            </span>
-                                        </div>
+                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                            💊 Medication Prescription
+                                        </label>
 
                                         <div className="space-y-2">
                                             {medications.map((med, index) => (
@@ -341,43 +336,6 @@ export default function TeamsPage() {
                                 </div>
                             </>
                         )}
-
-                        {/* Team Members */}
-                        <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-3">
-                                Team Members ({uniqueParticipants.length})
-                            </h3>
-                            {uniqueParticipants.length === 0 ? (
-                                <p className="text-sm text-[var(--text-muted)] text-center py-4">
-                                    No members assigned to this role yet
-                                </p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {uniqueParticipants.map(participantId => {
-                                        const participantAssignments = selectedRoleAssignments.filter(a => a.participantId === participantId);
-
-                                        return (
-                                            <div
-                                                key={participantId}
-                                                className="p-3 rounded-lg bg-[var(--bg-card)] flex items-center justify-between"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-medium">
-                                                        {getParticipantName(participantId).charAt(0)}
-                                                    </div>
-                                                    <span className="text-sm font-medium text-[var(--text-primary)]">
-                                                        {getParticipantName(participantId)}
-                                                    </span>
-                                                </div>
-                                                <div className="text-xs text-[var(--text-muted)]">
-                                                    {participantAssignments.length} shift{participantAssignments.length !== 1 ? 's' : ''}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
                     </div>
                 ) : (
                     <div className="text-center py-16">
