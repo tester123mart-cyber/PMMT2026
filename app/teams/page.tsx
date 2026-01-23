@@ -114,28 +114,41 @@ export default function TeamsPage() {
     const selectedRoleAssignments = selectedRoleId ? getAssignmentsForRole(selectedRoleId) : [];
     const uniqueParticipants = [...new Set(selectedRoleAssignments.map(a => a.participantId))];
 
+    // Sort roles: Clinical first (alphabetically), then Support (alphabetically)
+    const sortedRoles = [...state.roles].sort((a, b) => {
+        // Clinical roles come first
+        if (a.category === 'clinical' && b.category !== 'clinical') return -1;
+        if (a.category !== 'clinical' && b.category === 'clinical') return 1;
+        // Within same category, sort alphabetically
+        return a.name.localeCompare(b.name);
+    });
+
     return (
         <div className="min-h-screen bg-[var(--bg-primary)]">
             <Header />
 
             <main className="container py-4">
                 {/* Teams Sub-header Navigation */}
-                <div className="flex flex-wrap gap-4 justify-center py-3 border-b border-[var(--border-subtle)] mb-6">
-                    {state.roles.map(role => (
-                        <button
-                            key={role.id}
-                            onClick={() => setSelectedRoleId(selectedRoleId === role.id ? null : role.id)}
-                            className={`
-                                text-sm transition-all flex items-center gap-1.5
-                                ${selectedRoleId === role.id
-                                    ? 'text-blue-500 font-semibold'
-                                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                                }
-                            `}
-                        >
-                            <span>{role.icon}</span>
-                            <span>{role.name}</span>
-                        </button>
+                <div className="flex flex-wrap items-center justify-center py-3 border-b border-[var(--border-subtle)] mb-6">
+                    {sortedRoles.map((role, index) => (
+                        <div key={role.id} className="flex items-center">
+                            <button
+                                onClick={() => setSelectedRoleId(selectedRoleId === role.id ? null : role.id)}
+                                className={`
+                                    px-3 py-1 text-sm transition-all flex items-center gap-1.5
+                                    ${selectedRoleId === role.id
+                                        ? 'text-blue-500 font-semibold'
+                                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                                    }
+                                `}
+                            >
+                                <span>{role.icon}</span>
+                                <span>{role.name}</span>
+                            </button>
+                            {index < sortedRoles.length - 1 && (
+                                <span className="text-[var(--border-subtle)] mx-1">|</span>
+                            )}
+                        </div>
                     ))}
                 </div>
 

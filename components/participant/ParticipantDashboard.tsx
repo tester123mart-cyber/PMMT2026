@@ -107,7 +107,7 @@ export default function ParticipantDashboard() {
                     </h2>
 
                     {/* Clinic Day Tabs */}
-                    <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                    <div className="grid gap-3 mb-8" style={{ gridTemplateColumns: `repeat(${Math.min(state.clinicDays.length, 4)}, 1fr)` }}>
                         {state.clinicDays.map(day => (
                             <button
                                 key={day.id}
@@ -116,15 +116,15 @@ export default function ParticipantDashboard() {
                                     setSelectedShiftId(null);
                                 }}
                                 className={`
-                                    px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
+                                    p-4 rounded-xl text-center font-medium transition-all
                                     ${selectedClinicDayId === day.id
-                                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+                                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
                                         : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
                                     }
                                 `}
                             >
-                                <div>{day.name}</div>
-                                <div className={`text-xs ${selectedClinicDayId === day.id ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                                <div className="text-sm font-semibold">{day.name}</div>
+                                <div className={`text-xs mt-1 ${selectedClinicDayId === day.id ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
                                     {formatDate(day.date)}
                                 </div>
                             </button>
