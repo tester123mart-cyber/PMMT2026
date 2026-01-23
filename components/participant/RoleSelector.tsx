@@ -25,9 +25,13 @@ export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSele
     const understaffedRoles = getUnderstaffedRoles(state, clinicDayId, shiftId);
     const understaffedRoleIds = new Set(understaffedRoles.map(r => r.roleId));
 
-    // Group roles by category
-    const clinicalRoles = state.roles.filter(r => r.category === 'clinical');
-    const supportRoles = state.roles.filter(r => r.category === 'support');
+    // Group roles by category and sort alphabetically
+    const clinicalRoles = state.roles
+        .filter(r => r.category === 'clinical')
+        .sort((a, b) => a.name.localeCompare(b.name));
+    const supportRoles = state.roles
+        .filter(r => r.category === 'support')
+        .sort((a, b) => a.name.localeCompare(b.name));
 
     const handleRoleSelect = (roleId: string) => {
         if (isRoleFull(clinicDayId, shiftId, roleId) && myShiftAssignment?.roleId !== roleId) {

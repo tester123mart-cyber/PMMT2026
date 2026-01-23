@@ -5,88 +5,16 @@ import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
 import { SHIFTS } from '@/lib/data';
 
-// Role responsibilities data
+// Role responsibilities data - TO BE DEVELOPED
 const ROLE_RESPONSIBILITIES: Record<string, { description: string; duties: string[] }> = {
-    medical: {
-        description: 'Provide medical consultations and treatment to patients.',
-        duties: [
-            'Conduct patient assessments and examinations',
-            'Diagnose and treat common medical conditions',
-            'Prescribe medications as appropriate',
-            'Refer complex cases to appropriate specialists',
-            'Document patient encounters accurately',
-        ],
-    },
-    nursing: {
-        description: 'Support medical team with patient care and vital monitoring.',
-        duties: [
-            'Take and record patient vital signs',
-            'Assist doctors during consultations',
-            'Administer medications and vaccinations',
-            'Provide wound care and dressing changes',
-            'Educate patients on medication usage',
-        ],
-    },
-    optometry: {
-        description: 'Provide eye examinations and vision correction services.',
-        duties: [
-            'Conduct comprehensive eye examinations',
-            'Measure visual acuity and prescribe corrective lenses',
-            'Screen for common eye conditions',
-            'Fit and dispense eyeglasses',
-            'Provide eye health education',
-        ],
-    },
-    dentistry: {
-        description: 'Provide dental care including extractions and basic treatments.',
-        duties: [
-            'Perform dental examinations and assessments',
-            'Conduct tooth extractions when necessary',
-            'Provide basic restorative treatments',
-            'Offer oral hygiene education',
-            'Manage dental emergencies',
-        ],
-    },
-    pharmacy: {
-        description: 'Manage medication dispensing and patient counseling.',
-        duties: [
-            'Dispense prescribed medications accurately',
-            'Counsel patients on proper medication use',
-            'Manage medication inventory',
-            'Check for drug interactions',
-            'Maintain dispensing records',
-        ],
-    },
-    registration: {
-        description: 'Handle patient registration and flow management.',
-        duties: [
-            'Register incoming patients',
-            'Collect and record patient demographics',
-            'Issue patient tickets and numbers',
-            'Direct patients to appropriate stations',
-            'Manage patient queue flow',
-        ],
-    },
-    triage: {
-        description: 'Assess patient urgency and prioritize care.',
-        duties: [
-            'Conduct initial patient assessments',
-            'Prioritize patients based on urgency',
-            'Take and record vital signs',
-            'Direct patients to appropriate services',
-            'Identify emergency cases for immediate care',
-        ],
-    },
-    logistics: {
-        description: 'Coordinate supplies, equipment, and clinic operations.',
-        duties: [
-            'Manage medical supplies and inventory',
-            'Coordinate equipment setup and breakdown',
-            'Ensure stations are properly stocked',
-            'Handle equipment issues and repairs',
-            'Support general clinic operations',
-        ],
-    },
+    medical: { description: '', duties: [] },
+    nursing: { description: '', duties: [] },
+    optometry: { description: '', duties: [] },
+    dentistry: { description: '', duties: [] },
+    pharmacy: { description: '', duties: [] },
+    registration: { description: '', duties: [] },
+    triage: { description: '', duties: [] },
+    logistics: { description: '', duties: [] },
 };
 
 export default function TeamsPage() {
