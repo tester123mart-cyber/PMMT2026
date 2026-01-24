@@ -1,29 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
+import { PatientRecord, MedicationEntry } from '@/lib/types';
+import { addPatientRecord } from '@/lib/firebaseService';
+import { generateId } from '@/lib/storage';
 
-// Medication entry interface
-interface MedicationEntry {
-    name: string;
-    dose: string;
-    frequency: string;
-}
 
-// Patient record interface
-interface PatientRecord {
-    id: string;
-    patientName: string;
-    medications: MedicationEntry[];
-    followUps: string;
-    comments: string;
-    createdAt: Date;
-    createdBy: {
-        name: string;
-        email: string;
-    };
-}
 
 export default function TeamsPage() {
     const { state } = useApp();
@@ -36,8 +20,16 @@ export default function TeamsPage() {
     const [comments, setComments] = useState('');
 
     // Patient records CRM
-    const [patientRecords, setPatientRecords] = useState<PatientRecord[]>([]);
+    // const [patientRecords, setPatientRecords] = useState<PatientRecord[]>([]); // Now using global state
     const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
+
+    // Get active clinic day
+    const activeClinicDay = state.clinicDays.find(d => d.isActive);
+
+    // Filter records for active clinic day
+    const patientRecords = state.patientRecords
+        ?.filter(r => r.clinicDayId === activeClinicDay?.id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
 
     const getParticipantName = (id: string) => {
         return state.participants.find(p => p.id === id)?.name || 'Unknown';
@@ -77,24 +69,27 @@ export default function TeamsPage() {
         }
     };
 
-    // Save patient record
-    const savePatientRecord = () => {
-        if (!patientName.trim() || !state.currentUser) return;
+    const savePatientRecord = async () => {
+        if (!patientName.trim() || !state.currentUser || !activeClinicDay) return;
 
         const newRecord: PatientRecord = {
-            id: Date.now().toString(),
+            id: generateId(),
             patientName: patientName.trim(),
             medications: medications.filter(m => m.name.trim()),
             followUps,
             comments,
-            createdAt: new Date(),
+            createdAt: new Date().toISOString(),
             createdBy: {
                 name: state.currentUser.name,
                 email: state.currentUser.email
-            }
+            },
+            clinicDayId: activeClinicDay.id
         };
 
-        setPatientRecords([newRecord, ...patientRecords]);
+        await addPatientRecord(newRecord);
+
+        // Local state update happens via real-time subscription in AppContext
+
 
         // Reset form
         setPatientName('');
@@ -248,7 +243,7 @@ export default function TeamsPage() {
                                     {/* Save Button */}
                                     <button
                                         onClick={savePatientRecord}
-                                        disabled={!patientName.trim()}
+                                        disabled={!patientName.trim() || !activeClinicDay}
                                         className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Save Patient Record
@@ -285,7 +280,7 @@ export default function TeamsPage() {
                                                                     {record.patientName}
                                                                 </span>
                                                                 <p className="text-xs text-[var(--text-muted)]">
-                                                                    {record.createdAt.toLocaleDateString()} • {record.medications.length} medication(s)
+                                                                    {new Date(record.createdAt).toLocaleDateString()} • {record.medications.length} medication(s)
                                                                 </p>
                                                             </div>
                                                         </div>

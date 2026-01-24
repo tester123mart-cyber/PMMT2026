@@ -13,7 +13,7 @@ import {
     Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals } from './types';
+import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals, PatientRecord } from './types';
 import { ROLES, SHIFTS, DEFAULT_CLINIC_DAYS, DEFAULT_FLOW_RATES, SAMPLE_PARTICIPANTS } from './data';
 import { generateId } from './storage';
 
@@ -24,6 +24,7 @@ const COLLECTIONS = {
     CLINIC_DAYS: 'clinicDays',
     FLOW_RATES: 'flowRates',
     SHIFT_ACTUALS: 'shiftActuals',
+    PATIENT_RECORDS: 'patientRecords',
     APP_CONFIG: 'appConfig',
 };
 
@@ -166,6 +167,30 @@ export const getAllShiftActuals = async (): Promise<ShiftActuals[]> => {
     return snapshot.docs.map(doc => doc.data() as ShiftActuals);
 };
 
+// Patient record operations
+export const addPatientRecord = async (record: PatientRecord): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await setDoc(doc(db, COLLECTIONS.PATIENT_RECORDS, record.id), record);
+};
+
+export const getAllPatientRecords = async (): Promise<PatientRecord[]> => {
+    if (!isFirebaseConfigured()) return [];
+
+    const snapshot = await getDocs(collection(db, COLLECTIONS.PATIENT_RECORDS));
+    return snapshot.docs.map(doc => doc.data() as PatientRecord);
+};
+
+export const getPatientRecordsByClinicDay = async (clinicDayId: string): Promise<PatientRecord[]> => {
+    if (!isFirebaseConfigured()) return [];
+
+    const q = query(
+        collection(db, COLLECTIONS.PATIENT_RECORDS),
+        where('clinicDayId', '==', clinicDayId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => doc.data() as PatientRecord);
+};
+
 // Real-time listeners
 export const subscribeToAssignments = (
     callback: (assignments: Assignment[]) => void
@@ -200,6 +225,17 @@ export const subscribeToClinicDays = (
     });
 };
 
+export const subscribeToPatientRecords = (
+    callback: (records: PatientRecord[]) => void
+): Unsubscribe | null => {
+    if (!isFirebaseConfigured()) return null;
+
+    return onSnapshot(collection(db, COLLECTIONS.PATIENT_RECORDS), (snapshot) => {
+        const records = snapshot.docs.map(doc => doc.data() as PatientRecord);
+        callback(records);
+    });
+};
+
 // Load full state from Firebase
 export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
     if (!isFirebaseConfigured()) {
@@ -207,12 +243,13 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
     }
 
     try {
-        const [participants, assignments, clinicDays, flowRates, shiftActuals] = await Promise.all([
+        const [participants, assignments, clinicDays, flowRates, shiftActuals, patientRecords] = await Promise.all([
             getAllParticipants(),
             getAllAssignments(),
             getAllClinicDays(),
             getAllFlowRates(),
             getAllShiftActuals(),
+            getAllPatientRecords(),
         ]);
 
         return {
@@ -221,6 +258,7 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
             clinicDays,
             flowRates,
             shiftActuals,
+            patientRecords,
             roles: ROLES,
             shifts: SHIFTS,
         };

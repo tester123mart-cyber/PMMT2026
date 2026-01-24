@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Participant, Assignment, ClinicDay, ShiftId } from '@/lib/types';
+import { AppState, Participant, Assignment, ClinicDay, ShiftId, PatientRecord } from '@/lib/types';
 import { loadState, saveState, generateId, findParticipantByEmail } from '@/lib/storage';
 import { ROLES, SHIFTS } from '@/lib/data';
 import * as firebaseService from '@/lib/firebaseService';
@@ -20,6 +20,7 @@ type Action =
     | { type: 'UPDATE_ASSIGNMENT_ATTENDANCE'; payload: { id: string; attended: boolean } }
     | { type: 'UPDATE_CLINIC_DAY'; payload: ClinicDay }
     | { type: 'UPDATE_FLOW_RATE'; payload: { roleId: string; rate: number } }
+    | { type: 'UPDATE_PATIENT_RECORDS'; payload: PatientRecord[] }
     | { type: 'IMPORT_STATE'; payload: AppState };
 
 // Reducer
@@ -104,6 +105,12 @@ function appReducer(state: AppState, action: Action): AppState {
                 ),
             };
 
+        case 'UPDATE_PATIENT_RECORDS':
+            return {
+                ...state,
+                patientRecords: action.payload,
+            };
+
         case 'IMPORT_STATE':
             return {
                 ...action.payload,
@@ -143,6 +150,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         shifts: SHIFTS,
         flowRates: [],
         shiftActuals: [],
+        patientRecords: [],
     });
 
     const isFirebaseEnabled = firebaseService.isFirebaseConfigured();
@@ -180,10 +188,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const unsubClinicDays = firebaseService.subscribeToClinicDays((clinicDays) => {
                     dispatch({ type: 'UPDATE_CLINIC_DAYS', payload: clinicDays });
                 });
+                const unsubPatientRecords = firebaseService.subscribeToPatientRecords((records) => {
+                    dispatch({ type: 'UPDATE_PATIENT_RECORDS', payload: records });
+                });
 
                 if (unsubAssignments) unsubscribeRefs.current.push(unsubAssignments);
                 if (unsubParticipants) unsubscribeRefs.current.push(unsubParticipants);
                 if (unsubClinicDays) unsubscribeRefs.current.push(unsubClinicDays);
+                if (unsubPatientRecords) unsubscribeRefs.current.push(unsubPatientRecords);
             } else {
                 // Fall back to localStorage
                 const loaded = loadState();

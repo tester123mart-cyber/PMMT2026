@@ -65,6 +65,26 @@ export interface ShiftActuals {
   recordedAt: string;
 }
 
+export interface MedicationEntry {
+  name: string;
+  dose: string;
+  frequency: string;
+}
+
+export interface PatientRecord {
+  id: string;
+  patientName: string;
+  medications: MedicationEntry[];
+  followUps: string;
+  comments: string;
+  createdAt: string; // ISO string for Firebase
+  createdBy: {
+    name: string;
+    email: string;
+  };
+  clinicDayId: string; // Links record to a clinic day
+}
+
 export interface AppState {
   currentUser: Participant | null;
   participants: Participant[];
@@ -74,6 +94,7 @@ export interface AppState {
   shifts: Shift[];
   flowRates: FlowRate[];
   shiftActuals: ShiftActuals[];
+  patientRecords: PatientRecord[];
 }
 
 // Computed types

@@ -15,6 +15,7 @@ export const getInitialState = (): AppState => ({
     shifts: SHIFTS,
     flowRates: DEFAULT_FLOW_RATES,
     shiftActuals: [],
+    patientRecords: [],
 });
 
 // Load state from localStorage
