@@ -127,7 +127,7 @@ export default function AdminPage() {
 }
 
 function ClinicDaysTab() {
-    const { state, dispatch } = useApp();
+    const { state, dispatch, addClinicDay, removeClinicDay } = useApp();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
     const [tempName, setTempName] = useState('');
@@ -154,7 +154,7 @@ function ClinicDaysTab() {
         setShowDatePicker(null);
     };
 
-    const handleAddDay = () => {
+    const handleAddDay = async () => {
         if (!newDayName || !newDayDate) return;
 
         const newClinicDay: ClinicDay = {
@@ -165,26 +165,14 @@ function ClinicDaysTab() {
             patientTicketsIssued: 0,
         };
 
-        dispatch({
-            type: 'IMPORT_STATE',
-            payload: {
-                ...state,
-                clinicDays: [...state.clinicDays, newClinicDay].sort((a, b) => a.date.localeCompare(b.date)),
-            },
-        });
+        await addClinicDay(newClinicDay);
         setNewDayName('');
         setNewDayDate('');
         setShowAddForm(false);
     };
 
-    const handleDeleteDay = (dayId: string) => {
-        dispatch({
-            type: 'IMPORT_STATE',
-            payload: {
-                ...state,
-                clinicDays: state.clinicDays.filter(d => d.id !== dayId),
-            },
-        });
+    const handleDeleteDay = async (dayId: string) => {
+        await removeClinicDay(dayId);
         setDeletingId(null);
     };
 

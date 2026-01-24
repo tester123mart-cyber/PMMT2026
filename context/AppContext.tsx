@@ -21,7 +21,10 @@ type Action =
     | { type: 'UPDATE_CLINIC_DAY'; payload: ClinicDay }
     | { type: 'UPDATE_FLOW_RATE'; payload: { roleId: string; rate: number } }
     | { type: 'UPDATE_PATIENT_RECORDS'; payload: PatientRecord[] }
-    | { type: 'IMPORT_STATE'; payload: AppState };
+    | { type: 'UPDATE_PATIENT_RECORDS'; payload: PatientRecord[] }
+    | { type: 'IMPORT_STATE'; payload: AppState }
+    | { type: 'ADD_CLINIC_DAY'; payload: ClinicDay }
+    | { type: 'REMOVE_CLINIC_DAY'; payload: string };
 
 // Reducer
 function appReducer(state: AppState, action: Action): AppState {
@@ -111,11 +114,22 @@ function appReducer(state: AppState, action: Action): AppState {
                 patientRecords: action.payload,
             };
 
-        case 'IMPORT_STATE':
             return {
                 ...action.payload,
                 roles: ROLES,
                 shifts: SHIFTS,
+            };
+
+        case 'ADD_CLINIC_DAY':
+            return {
+                ...state,
+                clinicDays: [...state.clinicDays, action.payload].sort((a, b) => a.date.localeCompare(b.date)),
+            };
+
+        case 'REMOVE_CLINIC_DAY':
+            return {
+                ...state,
+                clinicDays: state.clinicDays.filter(d => d.id !== action.payload),
             };
 
         default:
@@ -134,7 +148,10 @@ interface AppContextType {
     removeAssignment: (assignmentId: string) => Promise<void>;
     isRoleFull: (clinicDayId: string, shiftId: ShiftId, roleId: string) => boolean;
     getMyAssignments: (clinicDayId: string) => Assignment[];
+
     getParticipantsForShift: (clinicDayId: string, shiftId: ShiftId, roleId: string) => Participant[];
+    addClinicDay: (day: ClinicDay) => Promise<void>;
+    removeClinicDay: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -327,6 +344,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
             .filter((p): p is Participant => p !== undefined);
     };
 
+    const addClinicDay = async (day: ClinicDay): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.updateClinicDay(day);
+        }
+        dispatch({ type: 'ADD_CLINIC_DAY', payload: day });
+    };
+
+    const removeClinicDay = async (id: string): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.removeClinicDay(id);
+        }
+        dispatch({ type: 'REMOVE_CLINIC_DAY', payload: id });
+    };
+
     const value: AppContextType = {
         state,
         dispatch,
@@ -337,6 +368,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         isRoleFull,
         getMyAssignments,
         getParticipantsForShift,
+        addClinicDay,
+        removeClinicDay,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -140,6 +140,11 @@ export const updateClinicDay = async (clinicDay: ClinicDay): Promise<void> => {
     await setDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDay.id), clinicDay);
 };
 
+export const removeClinicDay = async (clinicDayId: string): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await deleteDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDayId));
+};
+
 // Flow rate operations
 export const getAllFlowRates = async (): Promise<FlowRate[]> => {
     if (!isFirebaseConfigured()) return DEFAULT_FLOW_RATES;
