@@ -73,7 +73,21 @@ export default function TeamsPage() {
     };
 
     const savePatientRecord = async () => {
-        if (!patientName.trim() || !state.currentUser || !activeClinicDay) return;
+        console.log('Attempting to save patient record...');
+        if (!patientName.trim()) {
+            console.error('Save failed: No patient name');
+            return;
+        }
+        if (!state.currentUser) {
+            console.error('Save failed: No current user');
+            alert('Please select a user profile/role first.');
+            return;
+        }
+        if (!activeClinicDay) {
+            console.error('Save failed: No active clinic day');
+            alert('No active clinic day found. Please configure clinic days in Admin.');
+            return;
+        }
 
         const newRecord: PatientRecord = {
             id: generateId(),
@@ -221,105 +235,119 @@ export default function TeamsPage() {
                                             📋 New Patient Record
                                         </h3>
 
-                                        {/* Patient Name */}
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                                Patient Name / ID
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={patientName}
-                                                onChange={(e) => setPatientName(e.target.value)}
-                                                placeholder="Enter patient name or identifier"
-                                                className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                            />
-                                        </div>
+                                        {/* New Patient Record Form */}
+                                        <div className="flex flex-col gap-4 mb-4">
+                                            {/* Row 1: Name & Meds */}
+                                            <div className="flex flex-col lg:flex-row gap-4">
+                                                {/* Patient Name - More compact */}
+                                                <div className="lg:w-1/3">
+                                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                                                        Patient Name / ID
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={patientName}
+                                                        onChange={(e) => setPatientName(e.target.value)}
+                                                        placeholder="Name..."
+                                                        className="w-full p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                    />
+                                                </div>
 
-                                        {/* Medication Prescription */}
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                                💊 Medication Prescription
-                                            </label>
+                                                {/* Medications - Inline */}
+                                                <div className="lg:w-2/3">
+                                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                                                        💊 Medication Prescription
+                                                    </label>
 
-                                            <div className="space-y-2">
-                                                {medications.map((med, index) => (
-                                                    <div key={index} className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-center">
-                                                        <input
-                                                            type="text"
-                                                            value={med.name}
-                                                            onChange={(e) => updateMedication(index, 'name', e.target.value)}
-                                                            placeholder="Drug name"
-                                                            className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            value={med.dose}
-                                                            onChange={(e) => updateMedication(index, 'dose', e.target.value)}
-                                                            placeholder="Dose"
-                                                            className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                                        />
-                                                        <input
-                                                            type="text"
-                                                            value={med.frequency}
-                                                            onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
-                                                            placeholder="Freq"
-                                                            className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                                        />
-                                                        {medications.length > 1 && (
-                                                            <button
-                                                                onClick={() => removeMedication(index)}
-                                                                className="text-red-500 hover:bg-red-500/10 p-1 rounded w-8 h-8 flex items-center justify-center"
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        )}
+                                                    <div className="space-y-2">
+                                                        {medications.map((med, index) => (
+                                                            <div key={index} className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-center">
+                                                                <input
+                                                                    type="text"
+                                                                    value={med.name}
+                                                                    onChange={(e) => updateMedication(index, 'name', e.target.value)}
+                                                                    placeholder="Drug"
+                                                                    className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    value={med.dose}
+                                                                    onChange={(e) => updateMedication(index, 'dose', e.target.value)}
+                                                                    placeholder="Dose"
+                                                                    className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    value={med.frequency}
+                                                                    onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
+                                                                    placeholder="Freq"
+                                                                    className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                                />
+                                                                {medications.length > 1 && (
+                                                                    <button
+                                                                        onClick={() => removeMedication(index)}
+                                                                        className="text-red-500 hover:bg-red-500/10 p-1 rounded w-8 h-8 flex items-center justify-center"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
+
+                                                    <button
+                                                        onClick={addMedication}
+                                                        className="mt-1 text-xs text-blue-500 hover:underline"
+                                                    >
+                                                        + Add Med
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            <button
-                                                onClick={addMedication}
-                                                className="mt-2 text-sm text-blue-500 hover:underline"
-                                            >
-                                                + Add Medication
-                                            </button>
-                                        </div>
+                                            {/* Row 2: Follow-ups & Comments */}
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                {/* Follow-ups */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                                                        📅 Follow-up(s)
+                                                    </label>
+                                                    <textarea
+                                                        value={followUps}
+                                                        onChange={(e) => setFollowUps(e.target.value)}
+                                                        placeholder="Required actions..."
+                                                        rows={2}
+                                                        className="w-full p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none text-sm"
+                                                    />
+                                                </div>
 
-                                        {/* Follow-ups */}
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                                📅 Follow-up(s) Required
-                                            </label>
-                                            <textarea
-                                                value={followUps}
-                                                onChange={(e) => setFollowUps(e.target.value)}
-                                                placeholder="Enter required follow-up actions, referrals, or appointments..."
-                                                rows={2}
-                                                className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
-                                            />
-                                        </div>
-
-                                        {/* Comments */}
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                                📝 Comments / Notes
-                                            </label>
-                                            <textarea
-                                                value={comments}
-                                                onChange={(e) => setComments(e.target.value)}
-                                                placeholder="Additional notes, observations, or comments..."
-                                                rows={2}
-                                                className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
-                                            />
+                                                {/* Comments */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                                                        📝 Notes
+                                                    </label>
+                                                    <textarea
+                                                        value={comments}
+                                                        onChange={(e) => setComments(e.target.value)}
+                                                        placeholder="Observations..."
+                                                        rows={2}
+                                                        className="w-full p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none text-sm"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Save Button */}
                                         <button
                                             onClick={savePatientRecord}
-                                            disabled={!patientName.trim() || !activeClinicDay}
+                                            disabled={!patientName.trim() || !activeClinicDay || !state.currentUser}
                                             className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Save Patient Record
+                                            {!state.currentUser
+                                                ? '⚠️ Log in to Save'
+                                                : !activeClinicDay
+                                                    ? '⚠️ No Active Clinic Day'
+                                                    : 'Save Patient Record'
+                                            }
                                         </button>
                                     </div>
                                 </div>
