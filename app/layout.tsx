@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PMMT 2026 | Mission Coordination",
+  title: "PMMT 2026 | Philippines Medical Missions Trip 2026",
   description: "Central coordination tool for PMMT 2026 medical mission trip - role allocation, clinic capacity planning, and patient ticketing.",
   keywords: ["PMMT", "medical mission", "logistics", "coordination", "clinic", "2026"],
 };
