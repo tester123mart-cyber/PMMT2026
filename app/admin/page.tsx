@@ -12,7 +12,7 @@ export default function AdminPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState<'clinic-days' | 'participants' | 'flow-rates' | 'data'>('clinic-days');
 
-    const isAdmin = state.currentUser?.email === 'ordersinformation123@gmail.com';
+    const isAdmin = state.currentUser?.email === 'ordersinformation123@gmail.com' || state.currentUser?.isAdmin;
 
     const handleExport = () => {
         exportData(state);
@@ -488,16 +488,35 @@ function ParticipantsTab() {
                                             {p.name.charAt(0)}
                                         </div>
                                         <div>
-                                            <div className="font-medium text-[var(--text-primary)]">{p.name}</div>
+                                            <div className="font-medium text-[var(--text-primary)] flex items-center gap-2">
+                                                {p.name}
+                                                {p.isAdmin && <span className="text-[10px] bg-purple-500/10 text-purple-500 px-1.5 py-0.5 rounded border border-purple-500/20">ADMIN</span>}
+                                            </div>
                                             <div className="text-sm text-[var(--text-muted)]">{p.email}</div>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => setDeletingId(p.id)}
-                                        className="px-3 py-2 rounded-xl text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10"
-                                    >
-                                        🗑️
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => {
+                                                const updated = state.participants.map(part =>
+                                                    part.id === p.id ? { ...part, isAdmin: !part.isAdmin } : part
+                                                );
+                                                dispatch({ type: 'IMPORT_STATE', payload: { ...state, participants: updated } });
+                                            }}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${p.isAdmin
+                                                ? 'bg-purple-500 text-white border-purple-500 hover:bg-purple-600'
+                                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:border-purple-500 hover:text-purple-500'
+                                                }`}
+                                        >
+                                            {p.isAdmin ? 'Admin' : 'Make Admin'}
+                                        </button>
+                                        <button
+                                            onClick={() => setDeletingId(p.id)}
+                                            className="px-3 py-2 rounded-xl text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

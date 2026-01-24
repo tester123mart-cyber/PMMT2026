@@ -74,8 +74,8 @@ export default function Header() {
                                     Reporting
                                 </Link>
 
-                                {/* Admin link - only for authorized email */}
-                                {state.currentUser.email === 'ordersinformation123@gmail.com' && (
+                                {/* Admin link - restricted to admins */}
+                                {(state.currentUser.email === 'ordersinformation123@gmail.com' || state.currentUser.isAdmin) && (
                                     <Link
                                         href="/admin"
                                         className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
