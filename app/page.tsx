@@ -44,7 +44,7 @@ export default function Home() {
             PMMT2026
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-2">
-            Medical Mission Coordination
+            Philippines Medical Missions Trip
           </p>
         </div>
 

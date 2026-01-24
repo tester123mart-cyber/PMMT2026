@@ -172,7 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     payload: {
                         ...localState,
                         ...firebaseState,
-                        currentUser: localState.currentUser, // Keep local user session
+                        currentUser: null, // Always start at login screen
                         roles: ROLES,
                         shifts: SHIFTS,
                     } as AppState,
@@ -196,10 +196,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 if (unsubParticipants) unsubscribeRefs.current.push(unsubParticipants);
                 if (unsubClinicDays) unsubscribeRefs.current.push(unsubClinicDays);
                 if (unsubPatientRecords) unsubscribeRefs.current.push(unsubPatientRecords);
-            } else {
                 // Fall back to localStorage
                 const loaded = loadState();
-                dispatch({ type: 'LOAD_STATE', payload: loaded });
+                dispatch({
+                    type: 'LOAD_STATE',
+                    payload: {
+                        ...loaded,
+                        currentUser: null // Always start at login screen
+                    }
+                });
             }
         };
 
