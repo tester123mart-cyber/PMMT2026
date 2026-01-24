@@ -124,6 +124,20 @@ export default function TeamsPage() {
         setTempRecord(null);
     };
 
+    const handleDeleteRecord = () => {
+        if (!selectedPatient) return;
+
+        if (confirm('Are you sure you want to delete this patient record? This cannot be undone.')) {
+            const updatedRecords = (state.patientRecords || []).filter(r => r.id !== selectedPatient.id);
+            dispatch({
+                type: 'UPDATE_PATIENT_RECORDS',
+                payload: updatedRecords
+            });
+            setSelectedPatient(null);
+            setIsEditing(false);
+        }
+    };
+
     const handleSaveEdit = () => {
         if (!tempRecord) return;
 
@@ -329,25 +343,25 @@ export default function TeamsPage() {
                                                     <div
                                                         key={record.id}
                                                         onClick={() => setSelectedPatient(record)}
-                                                        className="p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] cursor-pointer hover:border-blue-500/50 hover:bg-[var(--bg-hover)] transition-all"
+                                                        className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] cursor-pointer hover:border-blue-500/50 hover:bg-[var(--bg-hover)] transition-all"
                                                     >
                                                         {/* Simplified View - Name, Date, Recorder */}
                                                         <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-medium shadow-sm">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-medium shadow-sm text-sm">
                                                                     {record.patientName.charAt(0).toUpperCase()}
                                                                 </div>
                                                                 <div>
-                                                                    <span className="text-base font-semibold text-[var(--text-primary)] block">
+                                                                    <span className="text-sm font-semibold text-[var(--text-primary)] block">
                                                                         {record.patientName}
                                                                     </span>
-                                                                    <p className="text-xs text-[var(--text-muted)]">
-                                                                        {new Date(record.createdAt).toLocaleDateString()} at {new Date(record.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    <p className="text-[10px] text-[var(--text-muted)]">
+                                                                        {new Date(record.createdAt).toLocaleDateString()} {new Date(record.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <span className="text-xs text-[var(--text-muted)] italic">
-                                                                Recorded by {record.createdBy.name}
+                                                            <span className="text-[10px] text-[var(--text-muted)] italic">
+                                                                {record.createdBy.name.split(' ')[0]}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -531,11 +545,19 @@ export default function TeamsPage() {
                                     </>
                                 )}
 
-                                {/* Footer Metadata */}
+                                {/* Footer Metadata & Actions */}
                                 {!isEditing && (
                                     <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
-                                        <span>Recorded by <span className="font-medium text-[var(--text-primary)]">{selectedPatient.createdBy.name}</span></span>
-                                        <span>ID: {selectedPatient.id.slice(0, 8)}...</span>
+                                        <div className="flex flex-col">
+                                            <span>Recorded by <span className="font-medium text-[var(--text-primary)]">{selectedPatient.createdBy.name}</span></span>
+                                            <span>ID: {selectedPatient.id.slice(0, 8)}...</span>
+                                        </div>
+                                        <button
+                                            onClick={handleDeleteRecord}
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 px-2 py-1 rounded transition-colors"
+                                        >
+                                            Delete Record
+                                        </button>
                                     </div>
                                 )}
                             </div>

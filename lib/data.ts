@@ -75,13 +75,7 @@ export const ROLES: Role[] = [
         capacityPerShift: 8,
         icon: '👶',
     },
-    {
-        id: 'sterilisation',
-        name: 'Sterilisation',
-        category: 'support',
-        capacityPerShift: 4,
-        icon: '🧼',
-    },
+
     {
         id: 'logistics',
         name: 'Logistics',

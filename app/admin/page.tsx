@@ -648,8 +648,8 @@ function DataTab({
                         className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 hover:border-red-500 transition-colors text-center"
                     >
                         <div className="text-2xl mb-2">🗑️</div>
-                        <div className="font-medium text-red-500">Clear All</div>
-                        <div className="text-xs text-[var(--text-muted)] mt-1">Reset everything</div>
+                        <div className="font-medium text-red-500">Factory Reset</div>
+                        <div className="text-xs text-[var(--text-muted)] mt-1">Delete ALL data & start fresh</div>
                     </button>
                 </div>
             </div>
