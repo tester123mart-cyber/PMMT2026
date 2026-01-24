@@ -10,7 +10,7 @@ import { generateId } from '@/lib/storage';
 
 
 export default function TeamsPage() {
-    const { state } = useApp();
+    const { state, dispatch } = useApp();
     const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
 
     // Clinical form state
@@ -21,10 +21,12 @@ export default function TeamsPage() {
 
     // Patient records CRM
     // const [patientRecords, setPatientRecords] = useState<PatientRecord[]>([]); // Now using global state
-    const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
 
     // Get active clinic day
-    const activeClinicDay = state.clinicDays.find(d => d.isActive);
+    const today = new Date().toISOString().split('T')[0];
+    const activeClinicDay = state.clinicDays.find(d => d.isActive)
+        || state.clinicDays.find(d => d.date === today)
+        || state.clinicDays[0];
 
     // Filter records for active clinic day
     const patientRecords = state.patientRecords
@@ -88,8 +90,12 @@ export default function TeamsPage() {
 
         await addPatientRecord(newRecord);
 
-        // Local state update happens via real-time subscription in AppContext
-
+        // Optimistic update for UI responsiveness and fallback when Firebase is not configured
+        const updatedRecords = [newRecord, ...(state.patientRecords || [])];
+        dispatch({
+            type: 'UPDATE_PATIENT_RECORDS',
+            payload: updatedRecords
+        });
 
         // Reset form
         setPatientName('');
@@ -141,195 +147,203 @@ export default function TeamsPage() {
 
                         {/* Clinical Form - Only for Medical Team */}
                         {isMedicalTeam && (
-                            <>
-                                {/* All-in-One Clinical Form */}
-                                <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6">
-                                    <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-4">
-                                        📋 New Patient Record
-                                    </h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-6xl mx-auto">
+                                {/* Left Column: New Patient Record Form */}
+                                <div>
+                                    <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6 sticky top-4">
+                                        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-4">
+                                            📋 New Patient Record
+                                        </h3>
 
-                                    {/* Patient Name */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                            Patient Name / ID
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={patientName}
-                                            onChange={(e) => setPatientName(e.target.value)}
-                                            placeholder="Enter patient name or identifier"
-                                            className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                        />
-                                    </div>
-
-                                    {/* Medication Prescription */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                            💊 Medication Prescription
-                                        </label>
-
-                                        <div className="space-y-2">
-                                            {medications.map((med, index) => (
-                                                <div key={index} className="flex gap-2 items-center">
-                                                    <input
-                                                        type="text"
-                                                        value={med.name}
-                                                        onChange={(e) => updateMedication(index, 'name', e.target.value)}
-                                                        placeholder="Drug name"
-                                                        className="flex-1 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        value={med.dose}
-                                                        onChange={(e) => updateMedication(index, 'dose', e.target.value)}
-                                                        placeholder="Dose"
-                                                        className="w-24 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        value={med.frequency}
-                                                        onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
-                                                        placeholder="Frequency"
-                                                        className="w-28 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
-                                                    />
-                                                    {medications.length > 1 && (
-                                                        <button
-                                                            onClick={() => removeMedication(index)}
-                                                            className="text-red-500 hover:bg-red-500/10 p-1 rounded"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
+                                        {/* Patient Name */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                                Patient Name / ID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={patientName}
+                                                onChange={(e) => setPatientName(e.target.value)}
+                                                placeholder="Enter patient name or identifier"
+                                                className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                            />
                                         </div>
 
+                                        {/* Medication Prescription */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                                💊 Medication Prescription
+                                            </label>
+
+                                            <div className="space-y-2">
+                                                {medications.map((med, index) => (
+                                                    <div key={index} className="flex gap-2 items-center">
+                                                        <input
+                                                            type="text"
+                                                            value={med.name}
+                                                            onChange={(e) => updateMedication(index, 'name', e.target.value)}
+                                                            placeholder="Drug name"
+                                                            className="flex-1 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={med.dose}
+                                                            onChange={(e) => updateMedication(index, 'dose', e.target.value)}
+                                                            placeholder="Dose"
+                                                            className="w-24 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={med.frequency}
+                                                            onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
+                                                            placeholder="Frequency"
+                                                            className="w-28 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
+                                                        />
+                                                        {medications.length > 1 && (
+                                                            <button
+                                                                onClick={() => removeMedication(index)}
+                                                                className="text-red-500 hover:bg-red-500/10 p-1 rounded"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <button
+                                                onClick={addMedication}
+                                                className="mt-2 text-sm text-blue-500 hover:underline"
+                                            >
+                                                + Add Medication
+                                            </button>
+                                        </div>
+
+                                        {/* Follow-ups */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                                📅 Follow-up(s) Required
+                                            </label>
+                                            <textarea
+                                                value={followUps}
+                                                onChange={(e) => setFollowUps(e.target.value)}
+                                                placeholder="Enter required follow-up actions, referrals, or appointments..."
+                                                rows={2}
+                                                className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
+                                            />
+                                        </div>
+
+                                        {/* Comments */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                                                📝 Comments / Notes
+                                            </label>
+                                            <textarea
+                                                value={comments}
+                                                onChange={(e) => setComments(e.target.value)}
+                                                placeholder="Additional notes, observations, or comments..."
+                                                rows={2}
+                                                className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
+                                            />
+                                        </div>
+
+                                        {/* Save Button */}
                                         <button
-                                            onClick={addMedication}
-                                            className="mt-2 text-sm text-blue-500 hover:underline"
+                                            onClick={savePatientRecord}
+                                            disabled={!patientName.trim() || !activeClinicDay}
+                                            className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            + Add Medication
+                                            Save Patient Record
                                         </button>
                                     </div>
-
-                                    {/* Follow-ups */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                            📅 Follow-up(s) Required
-                                        </label>
-                                        <textarea
-                                            value={followUps}
-                                            onChange={(e) => setFollowUps(e.target.value)}
-                                            placeholder="Enter required follow-up actions, referrals, or appointments..."
-                                            rows={2}
-                                            className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
-                                        />
-                                    </div>
-
-                                    {/* Comments */}
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                                            📝 Comments / Notes
-                                        </label>
-                                        <textarea
-                                            value={comments}
-                                            onChange={(e) => setComments(e.target.value)}
-                                            placeholder="Additional notes, observations, or comments..."
-                                            rows={2}
-                                            className="w-full p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none resize-none"
-                                        />
-                                    </div>
-
-                                    {/* Save Button */}
-                                    <button
-                                        onClick={savePatientRecord}
-                                        disabled={!patientName.trim() || !activeClinicDay}
-                                        className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Save Patient Record
-                                    </button>
                                 </div>
 
-                                {/* Patient CRM - Previously Seen Patients */}
-                                <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6">
-                                    <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-4">
-                                        👥 Patient Records ({patientRecords.length})
-                                    </h3>
+                                {/* Right Column: Patient CRM - Previously Seen Patients */}
+                                <div>
+                                    <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6 h-full">
+                                        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-4">
+                                            👥 Patient Records ({patientRecords.length})
+                                        </h3>
 
-                                    {patientRecords.length === 0 ? (
-                                        <div className="text-center py-6 text-[var(--text-muted)]">
-                                            <div className="text-3xl mb-2">📋</div>
-                                            <p className="text-sm">No patient records yet</p>
-                                            <p className="text-xs">Save a patient record above to see it here</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {patientRecords.map(record => (
-                                                <div
-                                                    key={record.id}
-                                                    onClick={() => setSelectedPatient(selectedPatient?.id === record.id ? null : record)}
-                                                    className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] cursor-pointer hover:border-blue-500/50 transition-colors"
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white text-xs font-medium">
-                                                                {record.patientName.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-sm font-medium text-[var(--text-primary)]">
-                                                                    {record.patientName}
-                                                                </span>
-                                                                <p className="text-xs text-[var(--text-muted)]">
-                                                                    {new Date(record.createdAt).toLocaleDateString()} • {record.medications.length} medication(s)
-                                                                </p>
+                                        {patientRecords.length === 0 ? (
+                                            <div className="text-center py-6 text-[var(--text-muted)]">
+                                                <div className="text-3xl mb-2">📋</div>
+                                                <p className="text-sm">No patient records yet</p>
+                                                <p className="text-xs">Save a patient record to see it here</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {patientRecords.map(record => (
+                                                    <div
+                                                        key={record.id}
+                                                        className="p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)]"
+                                                    >
+                                                        <div className="flex items-start justify-between mb-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-medium shadow-sm">
+                                                                    {record.patientName.charAt(0).toUpperCase()}
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-base font-semibold text-[var(--text-primary)] block">
+                                                                        {record.patientName}
+                                                                    </span>
+                                                                    <p className="text-xs text-[var(--text-muted)]">
+                                                                        {new Date(record.createdAt).toLocaleDateString()} at {new Date(record.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <span className="text-[var(--text-muted)]">
-                                                            {selectedPatient?.id === record.id ? '▼' : '▶'}
-                                                        </span>
-                                                    </div>
 
-                                                    {/* Expanded View */}
-                                                    {selectedPatient?.id === record.id && (
-                                                        <div className="mt-3 pt-3 border-t border-[var(--border-subtle)] space-y-2 text-sm">
+                                                        {/* Expanded Content - Always Visible */}
+                                                        <div className="space-y-3 text-sm pl-1">
                                                             {record.medications.length > 0 && (
-                                                                <div>
-                                                                    <span className="font-medium text-[var(--text-secondary)]">💊 Medications:</span>
-                                                                    <ul className="ml-4 mt-1 space-y-1">
+                                                                <div className="bg-[var(--bg-primary)] p-3 rounded-md border border-[var(--border-subtle)]">
+                                                                    <span className="font-medium text-[var(--text-secondary)] block mb-1">💊 Medications:</span>
+                                                                    <ul className="space-y-1">
                                                                         {record.medications.map((med, i) => (
-                                                                            <li key={i} className="text-[var(--text-muted)]">
-                                                                                {med.name} - {med.dose} ({med.frequency})
+                                                                            <li key={i} className="text-[var(--text-primary)] flex justify-between border-b border-[var(--border-subtle)] last:border-0 pb-1 last:pb-0 border-dashed">
+                                                                                <span>{med.name}</span>
+                                                                                <span className="text-[var(--text-muted)] text-xs">{med.dose} • {med.frequency}</span>
                                                                             </li>
                                                                         ))}
                                                                     </ul>
                                                                 </div>
                                                             )}
-                                                            {record.followUps && (
-                                                                <div>
-                                                                    <span className="font-medium text-[var(--text-secondary)]">📅 Follow-up:</span>
-                                                                    <p className="text-[var(--text-muted)] ml-4">{record.followUps}</p>
+
+                                                            {(record.followUps || record.comments) && (
+                                                                <div className="grid grid-cols-1 gap-3">
+                                                                    {record.followUps && (
+                                                                        <div>
+                                                                            <span className="font-medium text-[var(--text-secondary)] text-xs uppercase tracking-wide">📅 Follow-up</span>
+                                                                            <p className="text-[var(--text-primary)] mt-1 bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-subtle)]">
+                                                                                {record.followUps}
+                                                                            </p>
+                                                                        </div>
+                                                                    )}
+                                                                    {record.comments && (
+                                                                        <div>
+                                                                            <span className="font-medium text-[var(--text-secondary)] text-xs uppercase tracking-wide">📝 Notes</span>
+                                                                            <p className="text-[var(--text-primary)] mt-1 bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-subtle)]">
+                                                                                {record.comments}
+                                                                            </p>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             )}
-                                                            {record.comments && (
-                                                                <div>
-                                                                    <span className="font-medium text-[var(--text-secondary)]">📝 Notes:</span>
-                                                                    <p className="text-[var(--text-muted)] ml-4">{record.comments}</p>
-                                                                </div>
-                                                            )}
-                                                            <div className="pt-2 mt-2 border-t border-[var(--border-subtle)]">
-                                                                <span className="font-medium text-[var(--text-secondary)]">👤 Recorded by:</span>
-                                                                <p className="text-[var(--text-muted)] ml-4">
-                                                                    {record.createdBy.name} ({record.createdBy.email})
-                                                                </p>
+
+                                                            <div className="pt-2 mt-2 flex justify-end">
+                                                                <span className="text-xs text-[var(--text-muted)] italic">
+                                                                    Recorded by {record.createdBy.name}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </>
+                            </div>
                         )}
                     </div>
                 ) : (
