@@ -388,7 +388,7 @@ function ParticipantsTab() {
         dispatch({
             type: 'ADD_PARTICIPANT',
             payload: {
-                id: generateId(),
+                id: generateId(), // FIXED: Generate ID for new participant
                 name: newParticipant.name,
                 email: newParticipant.email.toLowerCase(),
             },
