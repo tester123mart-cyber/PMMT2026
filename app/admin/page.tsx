@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
 import DatePicker from '@/components/shared/DatePicker';
-import { exportData, importData, clearAllData } from '@/lib/storage';
+import { exportData, importData, clearAllData, generateId } from '@/lib/storage';
 import { ClinicDay, Participant } from '@/lib/types';
 
 export default function AdminPage() {
@@ -388,6 +388,7 @@ function ParticipantsTab() {
         dispatch({
             type: 'ADD_PARTICIPANT',
             payload: {
+                id: generateId(),
                 name: newParticipant.name,
                 email: newParticipant.email.toLowerCase(),
             },
@@ -539,7 +540,12 @@ function FlowRatesTab() {
         if (existingIdx >= 0) {
             newFlowRates[existingIdx] = { ...newFlowRates[existingIdx], patientsPerHourPerStaff: rate };
         } else {
-            newFlowRates.push({ roleId, patientsPerHourPerStaff: rate, source: 'historical' });
+            newFlowRates.push({
+                roleId,
+                patientsPerHourPerStaff: rate,
+                source: 'historical',
+                updatedAt: new Date().toISOString()
+            });
         }
 
         dispatch({ type: 'IMPORT_STATE', payload: { ...state, flowRates: newFlowRates } });
