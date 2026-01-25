@@ -157,6 +157,5 @@ export interface PharmacyItem {
   form: PharmacyForm;
   dosage: string;
   stockCount: number;
-  initialStock: number; // For percentage calculation
   updatedAt: string;
 }

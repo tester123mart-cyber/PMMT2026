@@ -264,6 +264,11 @@ export const updatePharmacyItem = async (item: PharmacyItem): Promise<void> => {
     await setDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, item.id), item);
 };
 
+export const removePharmacyItem = async (itemId: string): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await deleteDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, itemId));
+};
+
 export const getAllPharmacyItems = async (): Promise<PharmacyItem[]> => {
     if (!isFirebaseConfigured()) return [];
 

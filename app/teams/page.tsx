@@ -390,7 +390,7 @@ export default function TeamsPage() {
 
                                 {/* Right Column: Patient CRM - Previously Seen Patients */}
                                 <div>
-                                    <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6 h-full">
+                                    <div className="p-5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] mb-6 h-[60vh] lg:h-[80vh] flex flex-col overflow-hidden">
                                         <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wide mb-4">
                                             👥 Patient Records ({patientRecords.length})
                                         </h3>
@@ -402,7 +402,7 @@ export default function TeamsPage() {
                                                 <p className="text-xs">Save a patient record to see it here</p>
                                             </div>
                                         ) : (
-                                            <div className="space-y-4">
+                                            <div className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar">
                                                 {patientRecords.map(record => (
                                                     <div
                                                         key={record.id}
