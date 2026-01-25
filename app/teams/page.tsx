@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/shared/Header';
 import { PatientRecord, MedicationEntry } from '@/lib/types';
-import { addPatientRecord } from '@/lib/firebaseService';
+import { addPatientRecord, updatePharmacyItem } from '@/lib/firebaseService';
 import { generateId } from '@/lib/storage';
+import PharmacyStocktake from '@/components/teams/PharmacyStocktake';
 
 
 
@@ -59,9 +60,21 @@ export default function TeamsPage() {
     };
 
     // Update medication
-    const updateMedication = (index: number, field: keyof MedicationEntry, value: string) => {
+    const updateMedication = (index: number, field: keyof MedicationEntry, value: any) => {
         const updated = [...medications];
+        // @ts-ignore - dynamic key access
         updated[index][field] = value;
+
+        // If updating name and it matches a pharmacy item, link it
+        if (field === 'name') {
+            const pharmacyItem = state.pharmacyItems.find(item => item.name === value);
+            if (pharmacyItem) {
+                updated[index].pharmacyItemId = pharmacyItem.id;
+            } else {
+                updated[index].pharmacyItemId = undefined;
+            }
+        }
+
         setMedications(updated);
     };
 
@@ -105,6 +118,20 @@ export default function TeamsPage() {
 
         await addPatientRecord(newRecord);
 
+        // Update pharmacy stock
+        for (const med of newRecord.medications) {
+            if (med.pharmacyItemId && !med.deducted) {
+                const item = state.pharmacyItems.find(i => i.id === med.pharmacyItemId);
+                if (item && item.stockCount > 0) {
+                    await updatePharmacyItem({
+                        ...item,
+                        stockCount: item.stockCount - 1, // Simple deduction logic for now
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+            }
+        }
+
         // Optimistic update for UI responsiveness and fallback when Firebase is not configured
         const updatedRecords = [newRecord, ...(state.patientRecords || [])];
         dispatch({
@@ -119,8 +146,9 @@ export default function TeamsPage() {
         setComments('');
     };
 
-    // Check if this is the Medical team
+    // Check team roles
     const isMedicalTeam = selectedRoleId === 'medical';
+    const isPharmacyTeam = selectedRoleId === 'pharmacy';
 
     // Patient Summary Modal Logic
     const [isEditing, setIsEditing] = useState(false);
@@ -267,8 +295,16 @@ export default function TeamsPage() {
                                                                     value={med.name}
                                                                     onChange={(e) => updateMedication(index, 'name', e.target.value)}
                                                                     placeholder="Drug"
+                                                                    list={`pharmacy-items-${index}`}
                                                                     className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
                                                                 />
+                                                                <datalist id={`pharmacy-items-${index}`}>
+                                                                    {state.pharmacyItems.map(item => (
+                                                                        <option key={item.id} value={item.name}>
+                                                                            {item.name} ({item.stockCount} in stock)
+                                                                        </option>
+                                                                    ))}
+                                                                </datalist>
                                                                 <input
                                                                     type="text"
                                                                     value={med.dose}
@@ -400,6 +436,10 @@ export default function TeamsPage() {
                                 </div>
                             </div>
                         )}
+
+                        {isPharmacyTeam && (
+                            <PharmacyStocktake />
+                        )}
                     </div>
                 ) : (
                     <div className="text-center py-16">
@@ -407,209 +447,212 @@ export default function TeamsPage() {
                         <p className="text-[var(--text-primary)] font-medium">Select a team above</p>
                         <p className="text-sm text-[var(--text-muted)] mt-1">View team members and clinical forms</p>
                     </div>
-                )}
+                )
+                }
 
                 {/* Patient Summary Modal */}
-                {selectedPatient && (
-                    <div
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
-                        onClick={() => {
-                            if (!isEditing) setSelectedPatient(null);
-                        }}
-                    >
+                {
+                    selectedPatient && (
                         <div
-                            className="bg-[var(--bg-secondary)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-[var(--border-subtle)] flex flex-col max-h-[90vh]"
-                            onClick={(e) => e.stopPropagation()}
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+                            onClick={() => {
+                                if (!isEditing) setSelectedPatient(null);
+                            }}
                         >
-                            {/* Modal Header */}
-                            <div className="p-4 sm:p-6 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-card)] shrink-0">
-                                <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-sm shrink-0">
-                                        {selectedPatient.patientName.charAt(0).toUpperCase()}
+                            <div
+                                className="bg-[var(--bg-secondary)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-[var(--border-subtle)] flex flex-col max-h-[90vh]"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* Modal Header */}
+                                <div className="p-4 sm:p-6 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-card)] shrink-0">
+                                    <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white text-lg sm:text-xl font-bold shadow-sm shrink-0">
+                                            {selectedPatient.patientName.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] truncate">
+                                                {selectedPatient.patientName}
+                                            </h3>
+                                            <p className="text-xs sm:text-sm text-[var(--text-muted)]">
+                                                {new Date(selectedPatient.createdAt).toLocaleDateString()} at {new Date(selectedPatient.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] truncate">
-                                            {selectedPatient.patientName}
-                                        </h3>
-                                        <p className="text-xs sm:text-sm text-[var(--text-muted)]">
-                                            {new Date(selectedPatient.createdAt).toLocaleDateString()} at {new Date(selectedPatient.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {!isEditing && (
+                                    <div className="flex items-center gap-2">
+                                        {!isEditing && (
+                                            <button
+                                                onClick={handleEditClick}
+                                                className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg text-sm font-medium mr-1"
+                                            >
+                                                Edit
+                                            </button>
+                                        )}
                                         <button
-                                            onClick={handleEditClick}
-                                            className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg text-sm font-medium mr-1"
+                                            onClick={() => setSelectedPatient(null)}
+                                            className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                                         >
-                                            Edit
+                                            ✕
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => setSelectedPatient(null)}
-                                        className="p-2 rounded-full hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                                    >
-                                        ✕
-                                    </button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Modal Body */}
-                            <div className="p-4 sm:p-6 space-y-6 overflow-y-auto">
-                                {!isEditing ? (
-                                    <>
-                                        {/* View Mode */}
-                                        {/* Medications */}
-                                        <div>
-                                            <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
-                                                💊 Medications
-                                            </h4>
-                                            {selectedPatient.medications.length > 0 ? (
-                                                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] overflow-hidden">
-                                                    <table className="w-full text-sm">
-                                                        <thead className="bg-[var(--bg-primary)] border-b border-[var(--border-subtle)]">
-                                                            <tr>
-                                                                <th className="px-4 py-2 text-left font-medium text-[var(--text-muted)]">Drug</th>
-                                                                <th className="px-4 py-2 text-left font-medium text-[var(--text-muted)]">Dose</th>
-                                                                <th className="px-4 py-2 text-left font-medium text-[var(--text-muted)]">Freq</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-[var(--border-subtle)]">
-                                                            {selectedPatient.medications.map((med, i) => (
-                                                                <tr key={i}>
-                                                                    <td className="px-4 py-3 text-[var(--text-primary)] font-medium">{med.name}</td>
-                                                                    <td className="px-4 py-3 text-[var(--text-secondary)]">{med.dose}</td>
-                                                                    <td className="px-4 py-3 text-[var(--text-secondary)]">{med.frequency}</td>
+                                {/* Modal Body */}
+                                <div className="p-4 sm:p-6 space-y-6 overflow-y-auto">
+                                    {!isEditing ? (
+                                        <>
+                                            {/* View Mode */}
+                                            {/* Medications */}
+                                            <div>
+                                                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
+                                                    💊 Medications
+                                                </h4>
+                                                {selectedPatient.medications.length > 0 ? (
+                                                    <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] overflow-hidden">
+                                                        <table className="w-full text-sm">
+                                                            <thead className="bg-[var(--bg-primary)] border-b border-[var(--border-subtle)]">
+                                                                <tr>
+                                                                    <th className="px-4 py-2 text-left font-medium text-[var(--text-muted)]">Drug</th>
+                                                                    <th className="px-4 py-2 text-left font-medium text-[var(--text-muted)]">Dose</th>
+                                                                    <th className="px-4 py-2 text-left font-medium text-[var(--text-muted)]">Freq</th>
                                                                 </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm text-[var(--text-muted)] italic">No medications recorded.</p>
-                                            )}
-                                        </div>
-
-                                        {/* Follow Ups */}
-                                        {selectedPatient.followUps && (
-                                            <div>
-                                                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                                                    📅 Follow-up Required
-                                                </h4>
-                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] whitespace-pre-wrap">
-                                                    {selectedPatient.followUps}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Notes */}
-                                        {selectedPatient.comments && (
-                                            <div>
-                                                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                                                    📝 Notes & Observations
-                                                </h4>
-                                                <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] whitespace-pre-wrap">
-                                                    {selectedPatient.comments}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        {/* Edit Mode */}
-                                        <div>
-                                            <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
-                                                💊 Medications (Edit)
-                                            </h4>
-                                            <div className="space-y-3">
-                                                {tempRecord?.medications.map((med, i) => (
-                                                    <div key={i} className="grid grid-cols-[2fr_1fr_1fr] gap-2">
-                                                        <input
-                                                            value={med.name}
-                                                            onChange={(e) => updateTempMedication(i, 'name', e.target.value)}
-                                                            className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
-                                                            placeholder="Name"
-                                                        />
-                                                        <input
-                                                            value={med.dose}
-                                                            onChange={(e) => updateTempMedication(i, 'dose', e.target.value)}
-                                                            className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
-                                                            placeholder="Dose"
-                                                        />
-                                                        <input
-                                                            value={med.frequency}
-                                                            onChange={(e) => updateTempMedication(i, 'frequency', e.target.value)}
-                                                            className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
-                                                            placeholder="Freq"
-                                                        />
+                                                            </thead>
+                                                            <tbody className="divide-y divide-[var(--border-subtle)]">
+                                                                {selectedPatient.medications.map((med, i) => (
+                                                                    <tr key={i}>
+                                                                        <td className="px-4 py-3 text-[var(--text-primary)] font-medium">{med.name}</td>
+                                                                        <td className="px-4 py-3 text-[var(--text-secondary)]">{med.dose}</td>
+                                                                        <td className="px-4 py-3 text-[var(--text-secondary)]">{med.frequency}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
                                                     </div>
-                                                ))}
+                                                ) : (
+                                                    <p className="text-sm text-[var(--text-muted)] italic">No medications recorded.</p>
+                                                )}
                                             </div>
-                                        </div>
 
-                                        <div>
-                                            <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                                                📅 Follow-up (Edit)
-                                            </h4>
-                                            <textarea
-                                                value={tempRecord?.followUps || ''}
-                                                onChange={(e) => updateTempRecord('followUps', e.target.value)}
-                                                className="w-full p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-blue-500"
-                                                rows={3}
-                                            />
-                                        </div>
+                                            {/* Follow Ups */}
+                                            {selectedPatient.followUps && (
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+                                                        📅 Follow-up Required
+                                                    </h4>
+                                                    <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] whitespace-pre-wrap">
+                                                        {selectedPatient.followUps}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                        <div>
-                                            <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-                                                📝 Notes (Edit)
-                                            </h4>
-                                            <textarea
-                                                value={tempRecord?.comments || ''}
-                                                onChange={(e) => updateTempRecord('comments', e.target.value)}
-                                                className="w-full p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-blue-500"
-                                                rows={3}
-                                            />
-                                        </div>
-                                    </>
-                                )}
+                                            {/* Notes */}
+                                            {selectedPatient.comments && (
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+                                                        📝 Notes & Observations
+                                                    </h4>
+                                                    <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] whitespace-pre-wrap">
+                                                        {selectedPatient.comments}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* Edit Mode */}
+                                            <div>
+                                                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
+                                                    💊 Medications (Edit)
+                                                </h4>
+                                                <div className="space-y-3">
+                                                    {tempRecord?.medications.map((med, i) => (
+                                                        <div key={i} className="grid grid-cols-[2fr_1fr_1fr] gap-2">
+                                                            <input
+                                                                value={med.name}
+                                                                onChange={(e) => updateTempMedication(i, 'name', e.target.value)}
+                                                                className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
+                                                                placeholder="Name"
+                                                            />
+                                                            <input
+                                                                value={med.dose}
+                                                                onChange={(e) => updateTempMedication(i, 'dose', e.target.value)}
+                                                                className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
+                                                                placeholder="Dose"
+                                                            />
+                                                            <input
+                                                                value={med.frequency}
+                                                                onChange={(e) => updateTempMedication(i, 'frequency', e.target.value)}
+                                                                className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
+                                                                placeholder="Freq"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
 
-                                {/* Footer Metadata & Actions */}
-                                {!isEditing && (
-                                    <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
-                                        <div className="flex flex-col">
-                                            <span>Recorded by <span className="font-medium text-[var(--text-primary)]">{selectedPatient.createdBy.name}</span></span>
-                                            <span>ID: {selectedPatient.id.slice(0, 8)}...</span>
+                                            <div>
+                                                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+                                                    📅 Follow-up (Edit)
+                                                </h4>
+                                                <textarea
+                                                    value={tempRecord?.followUps || ''}
+                                                    onChange={(e) => updateTempRecord('followUps', e.target.value)}
+                                                    className="w-full p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-blue-500"
+                                                    rows={3}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+                                                    📝 Notes (Edit)
+                                                </h4>
+                                                <textarea
+                                                    value={tempRecord?.comments || ''}
+                                                    onChange={(e) => updateTempRecord('comments', e.target.value)}
+                                                    className="w-full p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-blue-500"
+                                                    rows={3}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Footer Metadata & Actions */}
+                                    {!isEditing && (
+                                        <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+                                            <div className="flex flex-col">
+                                                <span>Recorded by <span className="font-medium text-[var(--text-primary)]">{selectedPatient.createdBy.name}</span></span>
+                                                <span>ID: {selectedPatient.id.slice(0, 8)}...</span>
+                                            </div>
+                                            <button
+                                                onClick={handleDeleteRecord}
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10 px-2 py-1 rounded transition-colors"
+                                            >
+                                                Delete Record
+                                            </button>
                                         </div>
+                                    )}
+                                </div>
+
+                                {/* Edit Mode Actions */}
+                                {isEditing && (
+                                    <div className="p-4 sm:p-6 border-t border-[var(--border-subtle)] bg-[var(--bg-card)] flex justify-end gap-3 shrink-0">
                                         <button
-                                            onClick={handleDeleteRecord}
-                                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 px-2 py-1 rounded transition-colors"
+                                            onClick={handleCancelEdit}
+                                            className="px-4 py-2 rounded-lg text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                                         >
-                                            Delete Record
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleSaveEdit}
+                                            className="px-6 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 shadow-md"
+                                        >
+                                            Save Changes
                                         </button>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Edit Mode Actions */}
-                            {isEditing && (
-                                <div className="p-4 sm:p-6 border-t border-[var(--border-subtle)] bg-[var(--bg-card)] flex justify-end gap-3 shrink-0">
-                                    <button
-                                        onClick={handleCancelEdit}
-                                        className="px-4 py-2 rounded-lg text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleSaveEdit}
-                                        className="px-6 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 shadow-md"
-                                    >
-                                        Save Changes
-                                    </button>
-                                </div>
-                            )}
                         </div>
-                    </div>
-                )}
+                    )
+                }
             </main>
         </div>
     );

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Participant, Assignment, ClinicDay, ShiftId, PatientRecord } from '@/lib/types';
+import { AppState, Participant, Assignment, ClinicDay, ShiftId, PatientRecord, PharmacyItem } from '@/lib/types';
 import { loadState, saveState, generateId, findParticipantByEmail } from '@/lib/storage';
 import { ROLES, SHIFTS } from '@/lib/data';
 import * as firebaseService from '@/lib/firebaseService';
@@ -24,7 +24,8 @@ type Action =
     | { type: 'UPDATE_PATIENT_RECORDS'; payload: PatientRecord[] }
     | { type: 'IMPORT_STATE'; payload: AppState }
     | { type: 'ADD_CLINIC_DAY'; payload: ClinicDay }
-    | { type: 'REMOVE_CLINIC_DAY'; payload: string };
+    | { type: 'REMOVE_CLINIC_DAY'; payload: string }
+    | { type: 'UPDATE_PHARMACY_ITEMS'; payload: PharmacyItem[] };
 
 // Reducer
 function appReducer(state: AppState, action: Action): AppState {
@@ -114,6 +115,13 @@ function appReducer(state: AppState, action: Action): AppState {
                 patientRecords: action.payload,
             };
 
+        case 'UPDATE_PHARMACY_ITEMS':
+            return {
+                ...state,
+                pharmacyItems: action.payload,
+            };
+
+        case 'IMPORT_STATE':
             return {
                 ...action.payload,
                 roles: ROLES,
@@ -168,6 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         flowRates: [],
         shiftActuals: [],
         patientRecords: [],
+        pharmacyItems: [],
     });
 
     const isFirebaseEnabled = firebaseService.isFirebaseConfigured();
@@ -208,11 +217,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const unsubPatientRecords = firebaseService.subscribeToPatientRecords((records) => {
                     dispatch({ type: 'UPDATE_PATIENT_RECORDS', payload: records });
                 });
+                const unsubPharmacyItems = firebaseService.subscribeToPharmacyItems((items) => {
+                    dispatch({ type: 'UPDATE_PHARMACY_ITEMS', payload: items });
+                });
 
                 if (unsubAssignments) unsubscribeRefs.current.push(unsubAssignments);
                 if (unsubParticipants) unsubscribeRefs.current.push(unsubParticipants);
                 if (unsubClinicDays) unsubscribeRefs.current.push(unsubClinicDays);
                 if (unsubPatientRecords) unsubscribeRefs.current.push(unsubPatientRecords);
+                if (unsubPharmacyItems) unsubscribeRefs.current.push(unsubPharmacyItems);
                 // Fall back to localStorage
                 const loaded = loadState();
                 dispatch({

@@ -69,6 +69,8 @@ export interface MedicationEntry {
   name: string;
   dose: string;
   frequency: string;
+  pharmacyItemId?: string; // Link to pharmacy stock
+  deducted?: boolean; // Whether stock has been deducted
 }
 
 export interface PatientRecord {
@@ -95,6 +97,7 @@ export interface AppState {
   flowRates: FlowRate[];
   shiftActuals: ShiftActuals[];
   patientRecords: PatientRecord[];
+  pharmacyItems: PharmacyItem[];
 }
 
 // Computed types
@@ -115,4 +118,45 @@ export interface PatientCapacity {
   staffCount: number;
   flowRate: number;
   projectedPatients: number;
+}
+
+export type PharmacyCategory =
+  | 'Vitamins & Supplements'
+  | 'Ear Eyes Nose Throat Preparations'
+  | 'Topical Medications'
+  | 'Cardiovascular Medications'
+  | 'Endocrine Medications'
+  | 'GIT Medications'
+  | 'Obstetric & Gynaecological'
+  | 'Analgesics'
+  | 'Antimicrobials'
+  | 'Psychotropics'
+  | 'Respiratory Medications'
+  | 'Miscellaneous Medications'
+  | 'Tablets & Capsules';
+
+export type PharmacyForm =
+  | 'Tablets'
+  | 'Capsules'
+  | 'Box'
+  | 'Cream/Ointment'
+  | 'Lotion'
+  | 'Liquid'
+  | 'Tab/Caps'
+  | 'Syrups'
+  | 'Drops'
+  | 'Lozenge'
+  | 'Ear Drops'
+  | 'Inhaler'
+  | 'Sachet';
+
+export interface PharmacyItem {
+  id: string;
+  name: string;
+  category: PharmacyCategory;
+  form: PharmacyForm;
+  dosage: string;
+  stockCount: number;
+  initialStock: number; // For percentage calculation
+  updatedAt: string;
 }

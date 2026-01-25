@@ -13,7 +13,7 @@ import {
     Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals, PatientRecord } from './types';
+import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals, PatientRecord, PharmacyItem } from './types';
 import { ROLES, SHIFTS, DEFAULT_CLINIC_DAYS, DEFAULT_FLOW_RATES, SAMPLE_PARTICIPANTS } from './data';
 import { generateId } from './storage';
 
@@ -25,6 +25,7 @@ const COLLECTIONS = {
     FLOW_RATES: 'flowRates',
     SHIFT_ACTUALS: 'shiftActuals',
     PATIENT_RECORDS: 'patientRecords',
+    PHARMACY_ITEMS: 'pharmacyItems',
     APP_CONFIG: 'appConfig',
 };
 
@@ -241,6 +242,35 @@ export const subscribeToPatientRecords = (
     });
 };
 
+export const subscribeToPharmacyItems = (
+    callback: (items: PharmacyItem[]) => void
+): Unsubscribe | null => {
+    if (!isFirebaseConfigured()) return null;
+
+    return onSnapshot(collection(db, COLLECTIONS.PHARMACY_ITEMS), (snapshot) => {
+        const items = snapshot.docs.map(doc => doc.data() as PharmacyItem);
+        callback(items);
+    });
+};
+
+// Pharmacy Item operations
+export const addPharmacyItem = async (item: PharmacyItem): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await setDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, item.id), item);
+};
+
+export const updatePharmacyItem = async (item: PharmacyItem): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await setDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, item.id), item);
+};
+
+export const getAllPharmacyItems = async (): Promise<PharmacyItem[]> => {
+    if (!isFirebaseConfigured()) return [];
+
+    const snapshot = await getDocs(collection(db, COLLECTIONS.PHARMACY_ITEMS));
+    return snapshot.docs.map(doc => doc.data() as PharmacyItem);
+};
+
 // Load full state from Firebase
 export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
     if (!isFirebaseConfigured()) {
@@ -248,13 +278,14 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
     }
 
     try {
-        const [participants, assignments, clinicDays, flowRates, shiftActuals, patientRecords] = await Promise.all([
+        const [participants, assignments, clinicDays, flowRates, shiftActuals, patientRecords, pharmacyItems] = await Promise.all([
             getAllParticipants(),
             getAllAssignments(),
             getAllClinicDays(),
             getAllFlowRates(),
             getAllShiftActuals(),
             getAllPatientRecords(),
+            getAllPharmacyItems(),
         ]);
 
         return {
@@ -264,6 +295,7 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
             flowRates,
             shiftActuals,
             patientRecords,
+            pharmacyItems,
             roles: ROLES,
             shifts: SHIFTS,
         };
