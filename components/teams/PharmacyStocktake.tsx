@@ -57,7 +57,7 @@ export default function PharmacyStocktake() {
         const today = new Date().toISOString().split('T')[0];
         const activeClinicDay = clinicDays.find(d => d.isActive) || clinicDays.find(d => d.date === today);
 
-        const itemMetrics: Record<string, { dispensed: number, percentChange: number }> = {};
+        const itemMetrics: Record<string, { dispensed: number, percentRemaining: number }> = {};
 
         pharmacyItems.forEach(item => {
             let dispensed = 0;
@@ -73,11 +73,11 @@ export default function PharmacyStocktake() {
             }
 
             const startStock = item.stockCount + dispensed;
-            const percentChange = startStock > 0
-                ? Math.round((dispensed / startStock) * 100)
+            const percentRemaining = startStock > 0
+                ? Math.round((item.stockCount / startStock) * 100)
                 : 0;
 
-            itemMetrics[item.id] = { dispensed, percentChange };
+            itemMetrics[item.id] = { dispensed, percentRemaining };
         });
 
         return itemMetrics;
@@ -304,7 +304,11 @@ export default function PharmacyStocktake() {
                                     </h4>
                                     <div className="space-y-1.5">
                                         {groupedItems[cat]!.map(item => {
-                                            const { dispensed, percentChange } = metrics[item.id] || { dispensed: 0, percentChange: 0 };
+                                            const { dispensed, percentRemaining } = metrics[item.id] || { dispensed: 0, percentRemaining: 0 };
+                                            let badgeColor = 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                                            if (percentRemaining < 20) badgeColor = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+                                            else if (percentRemaining < 50) badgeColor = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+
                                             return (
                                                 <div
                                                     key={item.id}
@@ -331,17 +335,17 @@ export default function PharmacyStocktake() {
                                                     </div>
 
                                                     <div className="flex items-center gap-3 text-right shrink-0 pl-3">
-                                                        {percentChange > 0 && (
+                                                        {percentRemaining < 100 && (
                                                             <div className="hidden sm:flex flex-col items-end">
-                                                                <span className="text-[10px] font-medium text-red-500 bg-red-100 dark:bg-red-900/30 px-1.5 rounded-full">
-                                                                    ▼ {percentChange}%
+                                                                <span className={`text-[10px] font-medium px-1.5 rounded-full ${badgeColor}`}>
+                                                                    {percentRemaining}% left
                                                                 </span>
                                                                 <span className="text-[9px] text-[var(--text-muted)]">
                                                                     {dispensed} used today
                                                                 </span>
                                                             </div>
                                                         )}
-                                                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-mono font-bold border ${stockCount > 0
+                                                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-mono font-bold border ${item.stockCount > 0
                                                             ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
                                                             : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
                                                             }`}>
@@ -410,19 +414,19 @@ export default function PharmacyStocktake() {
                                 <>
                                     {/* Stats Card */}
                                     {metrics[selectedItem.id]?.dispensed > 0 && (
-                                        <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 flex justify-between items-center">
+                                        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 flex justify-between items-center">
                                             <div>
-                                                <span className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide">Daily Usage</span>
+                                                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Daily Status</span>
                                                 <p className="text-sm text-[var(--text-secondary)]">
                                                     dispensed today
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                                                <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                                                     {metrics[selectedItem.id].dispensed}
                                                 </span>
-                                                <span className="text-xs text-orange-500 block">
-                                                    ▼ {metrics[selectedItem.id].percentChange}% change
+                                                <span className="text-xs text-blue-500 block">
+                                                    {metrics[selectedItem.id].percentRemaining}% remaining
                                                 </span>
                                             </div>
                                         </div>
