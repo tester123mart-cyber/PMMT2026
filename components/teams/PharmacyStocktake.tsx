@@ -304,53 +304,62 @@ export default function PharmacyStocktake() {
                                     </h4>
                                     <div className="space-y-1.5">
                                         {groupedItems[cat]!.map(item => {
-                                            const { dispensed, percentRemaining } = metrics[item.id] || { dispensed: 0, percentRemaining: 0 };
-                                            let badgeColor = 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-                                            if (percentRemaining < 20) badgeColor = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-                                            else if (percentRemaining < 50) badgeColor = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+                                            const { dispensed, percentRemaining } = metrics[item.id] || { dispensed: 0, percentRemaining: 100 };
+
+                                            // Color logic
+                                            let barColor = 'bg-green-500';
+                                            if (percentRemaining < 20) barColor = 'bg-red-500';
+                                            else if (percentRemaining < 50) barColor = 'bg-yellow-500';
 
                                             return (
                                                 <div
                                                     key={item.id}
                                                     onClick={() => setSelectedItem(item)}
-                                                    className="group flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-blue-500/50 hover:bg-[var(--bg-hover)] cursor-pointer transition-all"
+                                                    className="group flex flex-col p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-blue-500/50 hover:bg-[var(--bg-hover)] cursor-pointer transition-all gap-2"
                                                 >
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-sm shrink-0">
-                                                            💊
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <div className="flex items-baseline gap-2">
-                                                                <h4 className="font-semibold text-[var(--text-primary)] truncate text-sm">
-                                                                    {item.name}
-                                                                </h4>
-                                                                <span className="text-[10px] text-[var(--text-secondary)] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                                                                    {item.form}
-                                                                </span>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-sm shrink-0">
+                                                                💊
                                                             </div>
-                                                            <p className="text-xs text-[var(--text-muted)] truncate">
-                                                                {item.dosage}
-                                                            </p>
+                                                            <div className="min-w-0">
+                                                                <div className="flex items-baseline gap-2">
+                                                                    <h4 className="font-semibold text-[var(--text-primary)] truncate text-sm">
+                                                                        {item.name}
+                                                                    </h4>
+                                                                    <span className="text-[10px] text-[var(--text-secondary)] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                                                                        {item.form}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-xs text-[var(--text-muted)] truncate">
+                                                                    {item.dosage} <span className="text-[10px] opacity-70">mg</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-3 text-right shrink-0 pl-3">
+                                                            {percentRemaining < 100 && (
+                                                                <div className="hidden sm:flex flex-col items-end">
+                                                                    <span className="text-[9px] text-[var(--text-muted)]">
+                                                                        {dispensed} used
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-mono font-bold border ${item.stockCount > 0
+                                                                ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                                : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+                                                                }`}>
+                                                                {item.stockCount}
+                                                            </span>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-3 text-right shrink-0 pl-3">
-                                                        {percentRemaining < 100 && (
-                                                            <div className="hidden sm:flex flex-col items-end">
-                                                                <span className={`text-[10px] font-medium px-1.5 rounded-full ${badgeColor}`}>
-                                                                    {percentRemaining}% left
-                                                                </span>
-                                                                <span className="text-[9px] text-[var(--text-muted)]">
-                                                                    {dispensed} used today
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-mono font-bold border ${item.stockCount > 0
-                                                            ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-                                                            : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
-                                                            }`}>
-                                                            {item.stockCount}
-                                                        </span>
+                                                    {/* Progress Bar - Always Visible */}
+                                                    <div className="w-full bg-[var(--bg-secondary)] rounded-full h-1.5 overflow-hidden flex items-center">
+                                                        <div
+                                                            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                                                            style={{ width: `${percentRemaining}%` }}
+                                                        />
                                                     </div>
                                                 </div>
                                             );
