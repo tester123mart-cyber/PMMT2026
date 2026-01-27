@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PharmacyItem, PharmacyCategory, PharmacyForm as PharmacyFormType } from '@/lib/types';
 import { generateId } from '@/lib/storage';
@@ -50,7 +50,17 @@ export default function PharmacyStocktake() {
     // Edit/View Modal State
     const [selectedItem, setSelectedItem] = useState<PharmacyItem | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [tempItem, setTempItem] = useState<PharmacyItem | null>(null);
+    const [tempItem, setTempItem] = useState<Partial<PharmacyItem> | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Reset editing/deleting state when selected item changes or closes
+    useEffect(() => {
+        setIsEditing(false);
+        setIsDeleting(false);
+        if (selectedItem) {
+            setTempItem(null);
+        }
+    }, [selectedItem]);
 
     // Metrics Calculation
     const metrics = useMemo(() => {
@@ -165,23 +175,28 @@ export default function PharmacyStocktake() {
         setTempItem(null);
     };
 
-    const handleDeleteItem = async () => {
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsDeleting(true);
+    };
+
+    const handleConfirmDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         if (!selectedItem) return;
 
-        if (confirm(`Are you sure you want to delete ${selectedItem.name}?`)) {
-            // Optimistic update
-            const updatedItems = pharmacyItems.filter(item => item.id !== selectedItem.id);
-            dispatch({
-                type: 'UPDATE_PHARMACY_ITEMS',
-                payload: updatedItems
-            });
+        // Optimistic update
+        const updatedItems = pharmacyItems.filter(item => item.id !== selectedItem.id);
+        dispatch({
+            type: 'UPDATE_PHARMACY_ITEMS',
+            payload: updatedItems
+        });
 
-            // Backend update
-            await removePharmacyItem(selectedItem.id);
+        // Backend update
+        await removePharmacyItem(selectedItem.id);
 
-            setSelectedItem(null);
-            setIsEditing(false);
-        }
+        setSelectedItem(null);
+        setIsEditing(false);
+        setIsDeleting(false);
     };
 
     const updateTempItem = (field: keyof PharmacyItem, value: any) => {
@@ -460,12 +475,33 @@ export default function PharmacyStocktake() {
 
                                     {!isEditing && (
                                         <div className="pt-4 border-t border-[var(--border-subtle)] flex justify-end">
-                                            <button
-                                                onClick={handleDeleteItem}
-                                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                                            >
-                                                Delete Item
-                                            </button>
+                                            {isDeleting ? (
+                                                <div className="flex items-center gap-2 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                                                    <span className="text-sm text-[var(--text-muted)] mr-2">Are you sure?</span>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setIsDeleting(false);
+                                                        }}
+                                                        className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-3 py-1.5 text-sm"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={handleConfirmDelete}
+                                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm transition-colors"
+                                                    >
+                                                        Confirm Delete
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={handleDeleteClick}
+                                                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                                                >
+                                                    Delete Item
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </>

@@ -120,25 +120,48 @@ export default function TeamsPage() {
         await addPatientRecord(newRecord);
 
         // Update pharmacy stock
+        // Update pharmacy stock
+        let updatedPharmacyItems = [...state.pharmacyItems];
+        let pharmacyUpdatesMade = false;
+
         for (const med of newRecord.medications) {
             if (med.pharmacyItemId && !med.deducted) {
-                const item = state.pharmacyItems.find(i => i.id === med.pharmacyItemId);
-                if (item && item.stockCount > 0) {
-                    await updatePharmacyItem({
-                        ...item,
-                        stockCount: item.stockCount - 1, // Simple deduction logic for now
-                        updatedAt: new Date().toISOString()
-                    });
+                const itemIndex = updatedPharmacyItems.findIndex(i => i.id === med.pharmacyItemId);
+                if (itemIndex >= 0) {
+                    const item = updatedPharmacyItems[itemIndex];
+                    if (item.stockCount > 0) {
+                        const updatedItem = {
+                            ...item,
+                            stockCount: item.stockCount - 1,
+                            updatedAt: new Date().toISOString()
+                        };
+
+                        // Update local array for optimistic dispatch
+                        updatedPharmacyItems[itemIndex] = updatedItem;
+                        pharmacyUpdatesMade = true;
+
+                        // Background update to Firebase
+                        updatePharmacyItem(updatedItem).catch(err =>
+                            console.error('Error updating pharmacy item:', err)
+                        );
+                    }
                 }
             }
         }
 
-        // Optimistic update for UI responsiveness and fallback when Firebase is not configured
+        // Optimistic update for UI responsiveness
         const updatedRecords = [newRecord, ...(state.patientRecords || [])];
         dispatch({
             type: 'UPDATE_PATIENT_RECORDS',
             payload: updatedRecords
         });
+
+        if (pharmacyUpdatesMade) {
+            dispatch({
+                type: 'UPDATE_PHARMACY_ITEMS',
+                payload: updatedPharmacyItems
+            });
+        }
 
         // Reset form
         setPatientName('');
@@ -299,11 +322,17 @@ export default function TeamsPage() {
                                                                 <MedicationAutocomplete
                                                                     value={med.name}
                                                                     onChange={(val) => {
-                                                                        // Check for auto-capitalization if needed, though component handles selection
                                                                         // Standardizing on Title Case if user types manually
-                                                                        const capitalized = val.length < 2 ? val.toUpperCase() : val;
-                                                                        // Actually let's trust the autocomplete for selection, but maintain capitalization for typing
+                                                                        // The autocomplete onSelect will handle the precise linking
                                                                         updateMedication(index, 'name', val);
+                                                                    }}
+                                                                    onSelect={(item) => {
+                                                                        // Precise linking when selecting from dropdown
+                                                                        const updated = [...medications];
+                                                                        updated[index].name = item.name;
+                                                                        updated[index].pharmacyItemId = item.id;
+                                                                        if (item.dosage) updated[index].dose = item.dosage;
+                                                                        setMedications(updated);
                                                                     }}
                                                                     placeholder="Drug"
                                                                     pharmacyItems={state.pharmacyItems}

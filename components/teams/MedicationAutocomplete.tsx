@@ -7,6 +7,7 @@ interface MedicationAutocompleteProps {
     placeholder?: string;
     pharmacyItems: PharmacyItem[];
     className?: string;
+    onSelect?: (item: PharmacyItem) => void;
 }
 
 export default function MedicationAutocomplete({
@@ -14,7 +15,8 @@ export default function MedicationAutocomplete({
     onChange,
     placeholder = "Drug",
     pharmacyItems,
-    className
+    className,
+    onSelect
 }: MedicationAutocompleteProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [filteredItems, setFilteredItems] = useState<PharmacyItem[]>([]);
@@ -78,6 +80,9 @@ export default function MedicationAutocomplete({
 
     const selectItem = (item: PharmacyItem) => {
         onChange(item.name);
+        if (onSelect) {
+            onSelect(item);
+        }
         setIsOpen(false);
         setHighlightedIndex(-1);
     };
