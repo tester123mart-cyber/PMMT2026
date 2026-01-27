@@ -158,9 +158,6 @@ export default function ParticipantDashboard() {
                                     <div className="font-semibold">
                                         {shift.id === 'afternoon' ? '🌅' : '☀️'} {shift.name.replace(' Shift', '')}
                                     </div>
-                                    <div className={`text-xs ${isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>
-                                        {shift.startTime} - {shift.endTime}
-                                    </div>
                                     {hasAssignment && <div className="text-xs mt-1 text-green-600 font-bold">✓ Assigned</div>}
                                 </button>
                             );

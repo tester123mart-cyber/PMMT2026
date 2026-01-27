@@ -275,7 +275,12 @@ export default function TeamsPage() {
                                                     <input
                                                         type="text"
                                                         value={patientName}
-                                                        onChange={(e) => setPatientName(e.target.value)}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            // Auto-capitalize first letter of words
+                                                            const capitalized = val.replace(/(?:^|\s)\S/g, (a) => a.toUpperCase());
+                                                            setPatientName(capitalized);
+                                                        }}
                                                         placeholder="Name..."
                                                         className="w-full p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
                                                     />
@@ -293,7 +298,12 @@ export default function TeamsPage() {
                                                                 <input
                                                                     type="text"
                                                                     value={med.name}
-                                                                    onChange={(e) => updateMedication(index, 'name', e.target.value)}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value;
+                                                                        // Auto-capitalize first letter
+                                                                        const capitalized = val.charAt(0).toUpperCase() + val.slice(1);
+                                                                        updateMedication(index, 'name', capitalized);
+                                                                    }}
                                                                     placeholder="Drug"
                                                                     list={`pharmacy-items-${index}`}
                                                                     className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"

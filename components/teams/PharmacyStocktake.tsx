@@ -315,33 +315,24 @@ export default function PharmacyStocktake() {
                                                 <div
                                                     key={item.id}
                                                     onClick={() => setSelectedItem(item)}
-                                                    className="group flex flex-col p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-blue-500/50 hover:bg-[var(--bg-hover)] cursor-pointer transition-all gap-1.5"
+                                                    className="group flex items-center gap-3 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-blue-500/50 hover:bg-[var(--bg-hover)] cursor-pointer transition-all"
                                                 >
-                                                    {/* Row 1: Info & Stock */}
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
-                                                            <h4 className="font-semibold text-[var(--text-primary)] truncate text-sm">
-                                                                {item.name}
-                                                            </h4>
-                                                            <span className="shrink-0 text-[10px] text-[var(--text-secondary)] px-1.5 py-0 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                                                                {item.form}
-                                                            </span>
-                                                            <span className="shrink-0 text-xs text-[var(--text-muted)]">
-                                                                {item.dosage} <span className="opacity-70">mg</span>
-                                                            </span>
-                                                        </div>
-
-                                                        <span className={`shrink-0 inline-flex items-center justify-center min-w-[30px] px-1.5 py-0.5 rounded text-xs font-mono font-bold border ${item.stockCount > 0
-                                                            ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-                                                            : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
-                                                            }`}>
-                                                            {item.stockCount}
+                                                    {/* Medication Info: Name, Form, Dosage */}
+                                                    <div className="flex items-center gap-2 min-w-0 shrink-0">
+                                                        <h4 className="font-semibold text-[var(--text-primary)] truncate text-sm max-w-[120px] sm:max-w-[150px]">
+                                                            {item.name}
+                                                        </h4>
+                                                        <span className="shrink-0 text-[10px] text-[var(--text-secondary)] px-1.5 py-0 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                                                            {item.form}
+                                                        </span>
+                                                        <span className="shrink-0 text-xs text-[var(--text-muted)]">
+                                                            {item.dosage} <span className="opacity-70">mg</span>
                                                         </span>
                                                     </div>
 
-                                                    {/* Row 2: Progress Bar & % */}
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="grow bg-[var(--bg-secondary)] rounded-full h-1.5 overflow-hidden flex items-center">
+                                                    {/* Progress Bar & Percentage (Fills remaining space) */}
+                                                    <div className="flex-grow flex items-center gap-2 min-w-[50px]">
+                                                        <div className="flex-grow bg-[var(--bg-secondary)] rounded-full h-1.5 overflow-hidden flex items-center">
                                                             <div
                                                                 className={`h-full rounded-full transition-all duration-500 ${barColor}`}
                                                                 style={{ width: `${percentRemaining}%` }}
@@ -351,6 +342,14 @@ export default function PharmacyStocktake() {
                                                             {Math.round(percentRemaining)}%
                                                         </span>
                                                     </div>
+
+                                                    {/* Stock Count */}
+                                                    <span className={`shrink-0 inline-flex items-center justify-center min-w-[30px] px-1.5 py-0.5 rounded text-xs font-mono font-bold border ${item.stockCount > 0
+                                                        ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                        : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+                                                        }`}>
+                                                        {item.stockCount}
+                                                    </span>
                                                 </div>
                                             );
                                         })}
@@ -469,7 +468,12 @@ export default function PharmacyStocktake() {
                                         <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase mb-1 block">Name</label>
                                         <input
                                             value={tempItem?.name || ''}
-                                            onChange={(e) => updateTempItem('name', e.target.value)}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                // Capitalize first letter
+                                                const capitalized = val.charAt(0).toUpperCase() + val.slice(1);
+                                                updateTempItem('name', capitalized);
+                                            }}
                                             className="w-full p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
                                         />
                                     </div>
