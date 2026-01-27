@@ -87,6 +87,15 @@ export interface PatientRecord {
   clinicDayId: string; // Links record to a clinic day
 }
 
+export interface RoleCapacity {
+  id: string;
+  clinicDayId: string;
+  shiftId: ShiftId;
+  roleId: string;
+  capacity: number;
+  updatedAt: string;
+}
+
 export interface AppState {
   currentUser: Participant | null;
   participants: Participant[];
@@ -98,6 +107,7 @@ export interface AppState {
   shiftActuals: ShiftActuals[];
   patientRecords: PatientRecord[];
   pharmacyItems: PharmacyItem[];
+  roleCapacities: RoleCapacity[];
 }
 
 // Computed types

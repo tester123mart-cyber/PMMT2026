@@ -17,6 +17,7 @@ export const getInitialState = (): AppState => ({
     shiftActuals: [],
     patientRecords: [],
     pharmacyItems: [],
+    roleCapacities: [],
 });
 
 // Load state from localStorage
