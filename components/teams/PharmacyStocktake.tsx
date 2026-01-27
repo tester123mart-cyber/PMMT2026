@@ -160,7 +160,7 @@ export default function PharmacyStocktake() {
 
         // Optimistic update
         const updatedItems = pharmacyItems.map(item =>
-            item.id === tempItem.id ? tempItem : item
+            item.id === tempItem.id ? (tempItem as PharmacyItem) : item
         );
         dispatch({
             type: 'UPDATE_PHARMACY_ITEMS',
@@ -168,9 +168,9 @@ export default function PharmacyStocktake() {
         });
 
         // Backend update
-        await updatePharmacyItem(tempItem);
+        await updatePharmacyItem(tempItem as PharmacyItem);
 
-        setSelectedItem(tempItem);
+        setSelectedItem(tempItem as PharmacyItem);
         setIsEditing(false);
         setTempItem(null);
     };
