@@ -240,185 +240,184 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     }
                 });
             }
-        }
-    };
-
-    initializeData();
-
-    // Cleanup subscriptions on unmount
-    return () => {
-        unsubscribeRefs.current.forEach(unsub => unsub());
-    };
-}, [isFirebaseEnabled]);
-
-// Save state to localStorage (as backup, even with Firebase)
-useEffect(() => {
-    if (state.participants.length > 0 || state.assignments.length > 0) {
-        saveState(state);
-    }
-}, [state]);
-
-// Login helper
-const login = async (email: string, name: string): Promise<Participant | null> => {
-    let participant: Participant | null = null;
-
-    if (isFirebaseEnabled) {
-        // Check Firebase for existing participant
-        participant = await firebaseService.getParticipantByEmail(email);
-    }
-
-    if (!participant) {
-        // Check local state
-        participant = findParticipantByEmail(state, email) || null;
-    }
-
-    if (!participant) {
-        // Create new participant
-        participant = {
-            id: generateId(),
-            email: email.toLowerCase(),
-            name,
         };
 
+        initializeData();
+
+        // Cleanup subscriptions on unmount
+        return () => {
+            unsubscribeRefs.current.forEach(unsub => unsub());
+        };
+    }, [isFirebaseEnabled]);
+
+    // Save state to localStorage (as backup, even with Firebase)
+    useEffect(() => {
+        if (state.participants.length > 0 || state.assignments.length > 0) {
+            saveState(state);
+        }
+    }, [state]);
+
+    // Login helper
+    const login = async (email: string, name: string): Promise<Participant | null> => {
+        let participant: Participant | null = null;
+
+        if (isFirebaseEnabled) {
+            // Check Firebase for existing participant
+            participant = await firebaseService.getParticipantByEmail(email);
+        }
+
+        if (!participant) {
+            // Check local state
+            participant = findParticipantByEmail(state, email) || null;
+        }
+
+        if (!participant) {
+            // Create new participant
+            participant = {
+                id: generateId(),
+                email: email.toLowerCase(),
+                name,
+            };
+
+            if (isFirebaseEnabled) {
+                await firebaseService.addParticipant(participant);
+            }
+            dispatch({ type: 'ADD_PARTICIPANT', payload: participant });
+        }
+
+        dispatch({ type: 'LOGIN', payload: participant });
+        return participant;
+    };
+
+    // Logout helper
+    const logout = () => {
+        dispatch({ type: 'LOGOUT' });
+    };
+
+    // Check if role is full
+    const isRoleFull = (clinicDayId: string, shiftId: ShiftId, roleId: string): boolean => {
+        const role = state.roles.find(r => r.id === roleId);
+        if (!role) return true;
+
+        const count = state.assignments.filter(
+            a => a.clinicDayId === clinicDayId && a.shiftId === shiftId && a.roleId === roleId
+        ).length;
+
+        return count >= role.capacityPerShift;
+    };
+
+    // Add assignment helper
+    const addAssignment = async (clinicDayId: string, shiftId: ShiftId, roleId: string): Promise<boolean> => {
+        if (!state.currentUser) return false;
+        if (isRoleFull(clinicDayId, shiftId, roleId)) return false;
+
+        // Check if already assigned to this shift
+        const existing = state.assignments.find(
+            a => a.clinicDayId === clinicDayId &&
+                a.shiftId === shiftId &&
+                a.participantId === state.currentUser?.id
+        );
+        if (existing) return false;
+
+        const newAssignment: Assignment = {
+            id: generateId(),
+            participantId: state.currentUser.id,
+            clinicDayId,
+            shiftId,
+            roleId,
+            createdAt: new Date().toISOString(),
+        };
+
+        if (isFirebaseEnabled) {
+            await firebaseService.addAssignment(newAssignment);
+        }
+        dispatch({ type: 'ADD_ASSIGNMENT', payload: newAssignment });
+        return true;
+    };
+
+    // Remove assignment helper
+    const removeAssignment = async (assignmentId: string): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.removeAssignment(assignmentId);
+        }
+        dispatch({ type: 'REMOVE_ASSIGNMENT', payload: assignmentId });
+    };
+
+    // Get current user's assignments for a day
+    const getMyAssignments = (clinicDayId: string): Assignment[] => {
+        if (!state.currentUser) return [];
+        return state.assignments.filter(
+            a => a.clinicDayId === clinicDayId && a.participantId === state.currentUser?.id
+        );
+    };
+
+    // Get participants for a specific shift/role
+    const getParticipantsForShift = (clinicDayId: string, shiftId: ShiftId, roleId: string): Participant[] => {
+        const assignments = state.assignments.filter(
+            a => a.clinicDayId === clinicDayId && a.shiftId === shiftId && a.roleId === roleId
+        );
+        return assignments
+            .map(a => state.participants.find(p => p.id === a.participantId))
+            .filter((p): p is Participant => p !== undefined);
+    };
+
+    const addClinicDay = async (day: ClinicDay): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.updateClinicDay(day);
+        }
+        dispatch({ type: 'ADD_CLINIC_DAY', payload: day });
+    };
+
+    const updateClinicDay = async (day: ClinicDay): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.updateClinicDay(day);
+        }
+        dispatch({ type: 'UPDATE_CLINIC_DAY', payload: day });
+    };
+
+    const removeClinicDay = async (id: string): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.removeClinicDay(id);
+        }
+        dispatch({ type: 'REMOVE_CLINIC_DAY', payload: id });
+    };
+
+    const addParticipant = async (participant: Participant): Promise<void> => {
         if (isFirebaseEnabled) {
             await firebaseService.addParticipant(participant);
         }
         dispatch({ type: 'ADD_PARTICIPANT', payload: participant });
-    }
-
-    dispatch({ type: 'LOGIN', payload: participant });
-    return participant;
-};
-
-// Logout helper
-const logout = () => {
-    dispatch({ type: 'LOGOUT' });
-};
-
-// Check if role is full
-const isRoleFull = (clinicDayId: string, shiftId: ShiftId, roleId: string): boolean => {
-    const role = state.roles.find(r => r.id === roleId);
-    if (!role) return true;
-
-    const count = state.assignments.filter(
-        a => a.clinicDayId === clinicDayId && a.shiftId === shiftId && a.roleId === roleId
-    ).length;
-
-    return count >= role.capacityPerShift;
-};
-
-// Add assignment helper
-const addAssignment = async (clinicDayId: string, shiftId: ShiftId, roleId: string): Promise<boolean> => {
-    if (!state.currentUser) return false;
-    if (isRoleFull(clinicDayId, shiftId, roleId)) return false;
-
-    // Check if already assigned to this shift
-    const existing = state.assignments.find(
-        a => a.clinicDayId === clinicDayId &&
-            a.shiftId === shiftId &&
-            a.participantId === state.currentUser?.id
-    );
-    if (existing) return false;
-
-    const newAssignment: Assignment = {
-        id: generateId(),
-        participantId: state.currentUser.id,
-        clinicDayId,
-        shiftId,
-        roleId,
-        createdAt: new Date().toISOString(),
     };
 
-    if (isFirebaseEnabled) {
-        await firebaseService.addAssignment(newAssignment);
-    }
-    dispatch({ type: 'ADD_ASSIGNMENT', payload: newAssignment });
-    return true;
-};
+    const updateParticipant = async (participant: Participant): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.updateParticipant(participant);
+        }
+        // Helper to update specific participant in the array
+        const updatedParticipants = state.participants.map(p =>
+            p.id === participant.id ? participant : p
+        );
+        dispatch({ type: 'UPDATE_PARTICIPANTS', payload: updatedParticipants });
+    };
 
-// Remove assignment helper
-const removeAssignment = async (assignmentId: string): Promise<void> => {
-    if (isFirebaseEnabled) {
-        await firebaseService.removeAssignment(assignmentId);
-    }
-    dispatch({ type: 'REMOVE_ASSIGNMENT', payload: assignmentId });
-};
+    const value: AppContextType = {
+        state,
+        dispatch,
+        login,
+        logout,
+        addAssignment,
+        removeAssignment,
+        isRoleFull,
+        getMyAssignments,
+        getParticipantsForShift,
+        addClinicDay,
+        updateClinicDay,
+        removeClinicDay,
+        addParticipant,
+        updateParticipant,
+    };
 
-// Get current user's assignments for a day
-const getMyAssignments = (clinicDayId: string): Assignment[] => {
-    if (!state.currentUser) return [];
-    return state.assignments.filter(
-        a => a.clinicDayId === clinicDayId && a.participantId === state.currentUser?.id
-    );
-};
-
-// Get participants for a specific shift/role
-const getParticipantsForShift = (clinicDayId: string, shiftId: ShiftId, roleId: string): Participant[] => {
-    const assignments = state.assignments.filter(
-        a => a.clinicDayId === clinicDayId && a.shiftId === shiftId && a.roleId === roleId
-    );
-    return assignments
-        .map(a => state.participants.find(p => p.id === a.participantId))
-        .filter((p): p is Participant => p !== undefined);
-};
-
-const addClinicDay = async (day: ClinicDay): Promise<void> => {
-    if (isFirebaseEnabled) {
-        await firebaseService.updateClinicDay(day);
-    }
-    dispatch({ type: 'ADD_CLINIC_DAY', payload: day });
-};
-
-const updateClinicDay = async (day: ClinicDay): Promise<void> => {
-    if (isFirebaseEnabled) {
-        await firebaseService.updateClinicDay(day);
-    }
-    dispatch({ type: 'UPDATE_CLINIC_DAY', payload: day });
-};
-
-const removeClinicDay = async (id: string): Promise<void> => {
-    if (isFirebaseEnabled) {
-        await firebaseService.removeClinicDay(id);
-    }
-    dispatch({ type: 'REMOVE_CLINIC_DAY', payload: id });
-};
-
-const addParticipant = async (participant: Participant): Promise<void> => {
-    if (isFirebaseEnabled) {
-        await firebaseService.addParticipant(participant);
-    }
-    dispatch({ type: 'ADD_PARTICIPANT', payload: participant });
-};
-
-const updateParticipant = async (participant: Participant): Promise<void> => {
-    if (isFirebaseEnabled) {
-        await firebaseService.updateParticipant(participant);
-    }
-    // Helper to update specific participant in the array
-    const updatedParticipants = state.participants.map(p =>
-        p.id === participant.id ? participant : p
-    );
-    dispatch({ type: 'UPDATE_PARTICIPANTS', payload: updatedParticipants });
-};
-
-const value: AppContextType = {
-    state,
-    dispatch,
-    login,
-    logout,
-    addAssignment,
-    removeAssignment,
-    isRoleFull,
-    getMyAssignments,
-    getParticipantsForShift,
-    addClinicDay,
-    updateClinicDay,
-    removeClinicDay,
-    addParticipant,
-    updateParticipant,
-};
-
-return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 // Hook
