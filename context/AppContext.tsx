@@ -159,7 +159,10 @@ interface AppContextType {
 
     getParticipantsForShift: (clinicDayId: string, shiftId: ShiftId, roleId: string) => Participant[];
     addClinicDay: (day: ClinicDay) => Promise<void>;
+    updateClinicDay: (day: ClinicDay) => Promise<void>;
     removeClinicDay: (id: string) => Promise<void>;
+    addParticipant: (participant: Participant) => Promise<void>;
+    updateParticipant: (participant: Participant) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -364,11 +367,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'ADD_CLINIC_DAY', payload: day });
     };
 
+    const updateClinicDay = async (day: ClinicDay): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.updateClinicDay(day);
+        }
+        dispatch({ type: 'UPDATE_CLINIC_DAY', payload: day });
+    };
+
     const removeClinicDay = async (id: string): Promise<void> => {
         if (isFirebaseEnabled) {
             await firebaseService.removeClinicDay(id);
         }
         dispatch({ type: 'REMOVE_CLINIC_DAY', payload: id });
+    };
+
+    const addParticipant = async (participant: Participant): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.addParticipant(participant);
+        }
+        dispatch({ type: 'ADD_PARTICIPANT', payload: participant });
+    };
+
+    const updateParticipant = async (participant: Participant): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.updateParticipant(participant);
+        }
+        // Helper to update specific participant in the array
+        const updatedParticipants = state.participants.map(p =>
+            p.id === participant.id ? participant : p
+        );
+        dispatch({ type: 'UPDATE_PARTICIPANTS', payload: updatedParticipants });
     };
 
     const value: AppContextType = {
@@ -382,7 +410,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getMyAssignments,
         getParticipantsForShift,
         addClinicDay,
+        updateClinicDay,
         removeClinicDay,
+        addParticipant,
+        updateParticipant,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -127,7 +127,7 @@ export default function AdminPage() {
 }
 
 function ClinicDaysTab() {
-    const { state, dispatch, addClinicDay, removeClinicDay } = useApp();
+    const { state, dispatch, addClinicDay, updateClinicDay, removeClinicDay } = useApp();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
     const [tempName, setTempName] = useState('');
@@ -144,13 +144,13 @@ function ClinicDaysTab() {
 
     const saveEdit = (day: ClinicDay) => {
         if (tempName.trim()) {
-            dispatch({ type: 'UPDATE_CLINIC_DAY', payload: { ...day, name: tempName.trim() } });
+            updateClinicDay({ ...day, name: tempName.trim() });
         }
         setEditingId(null);
     };
 
     const updateDate = (day: ClinicDay, newDate: string) => {
-        dispatch({ type: 'UPDATE_CLINIC_DAY', payload: { ...day, date: newDate } });
+        updateClinicDay({ ...day, date: newDate });
         setShowDatePicker(null);
     };
 
@@ -360,7 +360,7 @@ function ClinicDaysTab() {
 }
 
 function ParticipantsTab() {
-    const { state, dispatch } = useApp();
+    const { state, dispatch, addParticipant, updateParticipant } = useApp();
     const [newParticipant, setNewParticipant] = useState({ name: '', email: '' });
     const [search, setSearch] = useState('');
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -373,13 +373,10 @@ function ParticipantsTab() {
     const handleAddParticipant = () => {
         if (!newParticipant.name || !newParticipant.email) return;
 
-        dispatch({
-            type: 'ADD_PARTICIPANT',
-            payload: {
-                id: generateId(), // FIXED: Generate ID for new participant
-                name: newParticipant.name,
-                email: newParticipant.email.toLowerCase(),
-            },
+        addParticipant({
+            id: generateId(),
+            name: newParticipant.name,
+            email: newParticipant.email.toLowerCase(),
         });
         setNewParticipant({ name: '', email: '' });
     };
@@ -487,10 +484,8 @@ function ParticipantsTab() {
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => {
-                                                const updated = state.participants.map(part =>
-                                                    part.id === p.id ? { ...part, isAdmin: !part.isAdmin } : part
-                                                );
-                                                dispatch({ type: 'IMPORT_STATE', payload: { ...state, participants: updated } });
+                                                const updated = { ...p, isAdmin: !p.isAdmin };
+                                                updateParticipant(updated);
                                             }}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${p.isAdmin
                                                 ? 'bg-purple-500 text-white border-purple-500 hover:bg-purple-600'

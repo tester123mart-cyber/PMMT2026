@@ -315,51 +315,41 @@ export default function PharmacyStocktake() {
                                                 <div
                                                     key={item.id}
                                                     onClick={() => setSelectedItem(item)}
-                                                    className="group flex flex-col p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-blue-500/50 hover:bg-[var(--bg-hover)] cursor-pointer transition-all gap-2"
+                                                    className="group flex flex-col p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-blue-500/50 hover:bg-[var(--bg-hover)] cursor-pointer transition-all gap-1.5"
                                                 >
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-3 min-w-0">
-                                                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-sm shrink-0">
-                                                                💊
-                                                            </div>
-                                                            <div className="min-w-0">
-                                                                <div className="flex items-baseline gap-2">
-                                                                    <h4 className="font-semibold text-[var(--text-primary)] truncate text-sm">
-                                                                        {item.name}
-                                                                    </h4>
-                                                                    <span className="text-[10px] text-[var(--text-secondary)] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-                                                                        {item.form}
-                                                                    </span>
-                                                                </div>
-                                                                <p className="text-xs text-[var(--text-muted)] truncate">
-                                                                    {item.dosage} <span className="text-[10px] opacity-70">mg</span>
-                                                                </p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center gap-3 text-right shrink-0 pl-3">
-                                                            {percentRemaining < 100 && (
-                                                                <div className="hidden sm:flex flex-col items-end">
-                                                                    <span className="text-[9px] text-[var(--text-muted)]">
-                                                                        {dispensed} used
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-mono font-bold border ${item.stockCount > 0
-                                                                ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-                                                                : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
-                                                                }`}>
-                                                                {item.stockCount}
+                                                    {/* Row 1: Info & Stock */}
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                                                            <h4 className="font-semibold text-[var(--text-primary)] truncate text-sm">
+                                                                {item.name}
+                                                            </h4>
+                                                            <span className="shrink-0 text-[10px] text-[var(--text-secondary)] px-1.5 py-0 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                                                                {item.form}
+                                                            </span>
+                                                            <span className="shrink-0 text-xs text-[var(--text-muted)]">
+                                                                {item.dosage} <span className="opacity-70">mg</span>
                                                             </span>
                                                         </div>
+
+                                                        <span className={`shrink-0 inline-flex items-center justify-center min-w-[30px] px-1.5 py-0.5 rounded text-xs font-mono font-bold border ${item.stockCount > 0
+                                                            ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                                                            : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+                                                            }`}>
+                                                            {item.stockCount}
+                                                        </span>
                                                     </div>
 
-                                                    {/* Progress Bar - Always Visible */}
-                                                    <div className="w-full bg-[var(--bg-secondary)] rounded-full h-1.5 overflow-hidden flex items-center">
-                                                        <div
-                                                            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                                                            style={{ width: `${percentRemaining}%` }}
-                                                        />
+                                                    {/* Row 2: Progress Bar & % */}
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="grow bg-[var(--bg-secondary)] rounded-full h-1.5 overflow-hidden flex items-center">
+                                                            <div
+                                                                className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                                                                style={{ width: `${percentRemaining}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-[10px] font-mono text-[var(--text-muted)] w-8 text-right shrink-0">
+                                                            {Math.round(percentRemaining)}%
+                                                        </span>
                                                     </div>
                                                 </div>
                                             );

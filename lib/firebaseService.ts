@@ -78,6 +78,11 @@ export const addParticipant = async (participant: Participant): Promise<void> =>
     await setDoc(doc(db, COLLECTIONS.PARTICIPANTS, participant.id), participant);
 };
 
+export const updateParticipant = async (participant: Participant): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await setDoc(doc(db, COLLECTIONS.PARTICIPANTS, participant.id), participant);
+};
+
 export const getParticipantByEmail = async (email: string): Promise<Participant | null> => {
     if (!isFirebaseConfigured()) return null;
 

@@ -5,21 +5,21 @@ import { Role, Shift, ClinicDay, FlowRate, Participant } from './types';
 export const SHIFTS: Shift[] = [
     {
         id: 'morning1',
-        name: 'Morning Shift 1',
+        name: '1st Session',
         startTime: '08:00',
         endTime: '10:30',
         durationHours: 2.5,
     },
     {
         id: 'morning2',
-        name: 'Morning Shift 2',
+        name: '2nd Session',
         startTime: '11:00',
         endTime: '12:30',
         durationHours: 1.5,
     },
     {
         id: 'afternoon',
-        name: 'Afternoon Shift',
+        name: '3rd Session',
         startTime: '14:00',
         endTime: '17:00',
         durationHours: 3,

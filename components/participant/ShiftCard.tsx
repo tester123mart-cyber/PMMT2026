@@ -21,9 +21,6 @@ export default function ShiftCard({ shift, role, isAssigned }: ShiftCardProps) {
                     <h3 className="font-semibold text-[var(--text-primary)]">
                         {shift.name}
                     </h3>
-                    <p className="text-sm text-[var(--text-muted)]">
-                        {shift.startTime} - {shift.endTime}
-                    </p>
                 </div>
                 {isAssigned && role && (
                     <span className="text-3xl">{role.icon}</span>
