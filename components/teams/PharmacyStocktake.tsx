@@ -207,7 +207,12 @@ export default function PharmacyStocktake() {
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    // Title Case: Capitalize first letter of every word
+                                    const capitalized = val.replace(/(?:^|\s)\S/g, (a) => a.toUpperCase());
+                                    setName(capitalized);
+                                }}
                                 placeholder="e.g. Paracetamol"
                                 className="w-full p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
                             />
@@ -470,8 +475,8 @@ export default function PharmacyStocktake() {
                                             value={tempItem?.name || ''}
                                             onChange={(e) => {
                                                 const val = e.target.value;
-                                                // Capitalize first letter
-                                                const capitalized = val.charAt(0).toUpperCase() + val.slice(1);
+                                                // Title Case
+                                                const capitalized = val.replace(/(?:^|\s)\S/g, (a) => a.toUpperCase());
                                                 updateTempItem('name', capitalized);
                                             }}
                                             className="w-full p-2 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm"
