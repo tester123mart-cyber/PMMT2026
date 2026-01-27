@@ -115,9 +115,9 @@ export default function MedicationAutocomplete({
                                 }`}
                         >
                             <span className="font-medium truncate mr-2">
-                                {item.name} <span className="text-[var(--text-secondary)] font-normal ml-1">{/^\d+$/.test(item.dosage) ? `${item.dosage}mg` : item.dosage}</span>
+                                {item.name} <span className="text-[var(--text-secondary)] font-normal ml-1 text-[10px]">{/^\d+$/.test(item.dosage) ? `${item.dosage}mg` : item.dosage}</span>
                             </span>
-                            <span className={`text-xs whitespace-nowrap px-1.5 py-0.5 rounded border border-opacity-20 ${item.stockCount > 0
+                            <span className={`text-[10px] whitespace-nowrap px-1.5 py-0.5 rounded border border-opacity-20 ${item.stockCount > 0
                                 ? 'bg-green-100/50 text-green-700 border-green-500'
                                 : 'bg-red-100/50 text-red-700 border-red-500'
                                 }`}>

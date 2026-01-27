@@ -91,7 +91,7 @@ export default function PeoplePreview({
                     {isAlreadySelected ? (
                         <button
                             onClick={onConfirm}
-                            className="flex-1 py-3 px-4 rounded-xl font-medium transition-all bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20"
+                            className="flex-1 py-3 rounded-xl font-semibold transition-all bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
                         >
                             Unselect
                         </button>
