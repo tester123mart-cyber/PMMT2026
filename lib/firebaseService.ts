@@ -141,6 +141,11 @@ export const getAllClinicDays = async (): Promise<ClinicDay[]> => {
     return snapshot.docs.map(doc => doc.data() as ClinicDay);
 };
 
+export const addClinicDay = async (clinicDay: ClinicDay): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await setDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDay.id), clinicDay);
+};
+
 export const updateClinicDay = async (clinicDay: ClinicDay): Promise<void> => {
     if (!isFirebaseConfigured()) return;
     await setDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDay.id), clinicDay);

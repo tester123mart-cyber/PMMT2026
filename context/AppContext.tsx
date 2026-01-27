@@ -363,7 +363,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const addClinicDay = async (day: ClinicDay): Promise<void> => {
         if (isFirebaseEnabled) {
-            await firebaseService.updateClinicDay(day);
+            await firebaseService.addClinicDay(day);
         }
         dispatch({ type: 'ADD_CLINIC_DAY', payload: day });
     };
