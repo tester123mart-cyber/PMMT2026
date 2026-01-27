@@ -435,30 +435,63 @@ export default function TeamsPage() {
                                                 <p className="text-xs">Save a patient record to see it here</p>
                                             </div>
                                         ) : (
-                                            <div className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar">
+                                            <div className="space-y-1.5 overflow-y-auto flex-1 pr-1 custom-scrollbar">
+                                                {/* Header Row */}
+                                                <div className="grid grid-cols-[1.4fr_1.2fr_0.8fr] gap-2 px-3 py-2 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--bg-card)] border-b border-[var(--border-subtle)] sticky top-0 z-10">
+                                                    <div>Patient</div>
+                                                    <div>Meds</div>
+                                                    <div className="text-right">Recorded by</div>
+                                                </div>
+
                                                 {patientRecords.map(record => (
                                                     <div
                                                         key={record.id}
                                                         onClick={() => setSelectedPatient(record)}
-                                                        className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] cursor-pointer hover:border-blue-500/50 hover:bg-[var(--bg-hover)] transition-all"
+                                                        className="group grid grid-cols-[1.4fr_1.2fr_0.8fr] gap-2 p-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-blue-500/50 hover:bg-[var(--bg-hover)] cursor-pointer transition-all items-center"
                                                     >
-                                                        {/* Simplified View - Name, Date, Recorder */}
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-medium shadow-sm text-sm">
-                                                                    {record.patientName.charAt(0).toUpperCase()}
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-sm font-semibold text-[var(--text-primary)] block">
-                                                                        {record.patientName}
-                                                                    </span>
-                                                                    <p className="text-[10px] text-[var(--text-muted)]">
-                                                                        {new Date(record.createdAt).toLocaleDateString()} {new Date(record.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                    </p>
-                                                                </div>
+                                                        {/* Col 1: Patient Info (Name + Time inline) */}
+                                                        <div className="min-w-0 flex items-center gap-2">
+                                                            <div className="w-5 h-5 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                                                                {record.patientName.charAt(0).toUpperCase()}
                                                             </div>
-                                                            <span className="text-[10px] text-[var(--text-muted)] italic">
-                                                                {record.createdBy.name.split(' ')[0]}
+                                                            <div className="min-w-0 flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
+                                                                <span className="truncate font-medium text-[var(--text-primary)] text-xs sm:text-sm leading-tight">
+                                                                    {record.patientName}
+                                                                </span>
+                                                                <span className="text-[9px] text-[var(--text-muted)] shrink-0 leading-tight">
+                                                                    {new Date(record.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).toLowerCase()}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Col 2: Medications */}
+                                                        <div className="flex flex-wrap gap-1 min-w-0">
+                                                            {record.medications.length > 0 ? (
+                                                                <>
+                                                                    {record.medications.slice(0, 2).map((med, i) => (
+                                                                        <span
+                                                                            key={i}
+                                                                            className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800 truncate max-w-[80px] sm:max-w-[100px]"
+                                                                            title={`${med.name} ${med.dose}`}
+                                                                        >
+                                                                            {med.name}
+                                                                        </span>
+                                                                    ))}
+                                                                    {record.medications.length > 2 && (
+                                                                        <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                                                                            +{record.medications.length - 2}
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-[10px] text-[var(--text-muted)] italic">No meds</span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Col 3: Recorder (Full Name) */}
+                                                        <div className="text-right min-w-0">
+                                                            <span className="text-[9px] text-[var(--text-muted)] truncate block" title={record.createdBy.name}>
+                                                                {record.createdBy.name}
                                                             </span>
                                                         </div>
                                                     </div>
