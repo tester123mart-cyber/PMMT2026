@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Participant, Assignment, ClinicDay, ShiftId, PatientRecord, PharmacyItem } from '@/lib/types';
+import { AppState, Participant, Assignment, ClinicDay, ShiftId, PatientRecord, PharmacyItem, RoleCapacity } from '@/lib/types';
 import { loadState, saveState, generateId, findParticipantByEmail } from '@/lib/storage';
 import { ROLES, SHIFTS } from '@/lib/data';
 import * as firebaseService from '@/lib/firebaseService';
@@ -25,7 +25,10 @@ type Action =
     | { type: 'IMPORT_STATE'; payload: AppState }
     | { type: 'ADD_CLINIC_DAY'; payload: ClinicDay }
     | { type: 'REMOVE_CLINIC_DAY'; payload: string }
-    | { type: 'UPDATE_PHARMACY_ITEMS'; payload: PharmacyItem[] };
+    | { type: 'REMOVE_CLINIC_DAY'; payload: string }
+    | { type: 'UPDATE_PHARMACY_ITEMS'; payload: PharmacyItem[] }
+    | { type: 'UPDATE_ROLE_CAPACITIES'; payload: RoleCapacity[] }
+    | { type: 'UPDATE_ROLE_CAPACITY_ITEM'; payload: RoleCapacity };
 
 // Reducer
 function appReducer(state: AppState, action: Action): AppState {
@@ -140,6 +143,22 @@ function appReducer(state: AppState, action: Action): AppState {
                 clinicDays: state.clinicDays.filter(d => d.id !== action.payload),
             };
 
+        case 'UPDATE_ROLE_CAPACITIES':
+            return {
+                ...state,
+                roleCapacities: action.payload,
+            };
+
+        case 'UPDATE_ROLE_CAPACITY_ITEM': {
+            const existingIndex = state.roleCapacities.findIndex(rc => rc.id === action.payload.id);
+            if (existingIndex >= 0) {
+                const newCapacities = [...state.roleCapacities];
+                newCapacities[existingIndex] = action.payload;
+                return { ...state, roleCapacities: newCapacities };
+            }
+            return { ...state, roleCapacities: [...state.roleCapacities, action.payload] };
+        }
+
         default:
             return state;
     }
@@ -162,7 +181,9 @@ interface AppContextType {
     updateClinicDay: (day: ClinicDay) => Promise<void>;
     removeClinicDay: (id: string) => Promise<void>;
     addParticipant: (participant: Participant) => Promise<void>;
+    addParticipant: (participant: Participant) => Promise<void>;
     updateParticipant: (participant: Participant) => Promise<void>;
+    updateRoleCapacity: (capacity: RoleCapacity) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -179,7 +200,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         flowRates: [],
         shiftActuals: [],
         patientRecords: [],
+        patientRecords: [],
         pharmacyItems: [],
+        roleCapacities: [],
     });
 
     const isFirebaseEnabled = firebaseService.isFirebaseConfigured();
@@ -223,12 +246,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const unsubPharmacyItems = firebaseService.subscribeToPharmacyItems((items) => {
                     dispatch({ type: 'UPDATE_PHARMACY_ITEMS', payload: items });
                 });
+                const unsubRoleCapacities = firebaseService.subscribeToRoleCapacities((capacities) => {
+                    dispatch({ type: 'UPDATE_ROLE_CAPACITIES', payload: capacities });
+                });
 
                 if (unsubAssignments) unsubscribeRefs.current.push(unsubAssignments);
                 if (unsubParticipants) unsubscribeRefs.current.push(unsubParticipants);
                 if (unsubClinicDays) unsubscribeRefs.current.push(unsubClinicDays);
                 if (unsubPatientRecords) unsubscribeRefs.current.push(unsubPatientRecords);
                 if (unsubPharmacyItems) unsubscribeRefs.current.push(unsubPharmacyItems);
+                if (unsubRoleCapacities) unsubscribeRefs.current.push(unsubRoleCapacities);
             } else {
                 // Fall back to localStorage
                 const loaded = loadState();
@@ -389,6 +416,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'ADD_PARTICIPANT', payload: participant });
     };
 
+    const updateRoleCapacity = async (capacity: RoleCapacity): Promise<void> => {
+        if (isFirebaseEnabled) {
+            await firebaseService.updateRoleCapacity(capacity);
+        }
+        dispatch({ type: 'UPDATE_ROLE_CAPACITY_ITEM', payload: capacity });
+    };
+
     const updateParticipant = async (participant: Participant): Promise<void> => {
         if (isFirebaseEnabled) {
             await firebaseService.updateParticipant(participant);
@@ -414,7 +448,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateClinicDay,
         removeClinicDay,
         addParticipant,
+        addParticipant,
         updateParticipant,
+        updateRoleCapacity,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

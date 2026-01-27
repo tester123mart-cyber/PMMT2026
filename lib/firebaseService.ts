@@ -274,9 +274,7 @@ export const updatePharmacyItem = async (item: PharmacyItem): Promise<void> => {
     await setDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, item.id), item);
 };
 
-export const removePharmacyItem = async (itemId: string): Promise<void> => {
-    if (!isFirebaseConfigured()) return;
-    await deleteDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, itemId));
+await deleteDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, itemId));
 };
 
 export const getAllPharmacyItems = async (): Promise<PharmacyItem[]> => {
@@ -286,6 +284,30 @@ export const getAllPharmacyItems = async (): Promise<PharmacyItem[]> => {
     return snapshot.docs.map(doc => doc.data() as PharmacyItem);
 };
 
+// Role Capacity operations
+export const updateRoleCapacity = async (capacity: RoleCapacity): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await setDoc(doc(db, COLLECTIONS.ROLE_CAPACITIES, capacity.id), capacity);
+};
+
+export const getAllRoleCapacities = async (): Promise<RoleCapacity[]> => {
+    if (!isFirebaseConfigured()) return [];
+
+    const snapshot = await getDocs(collection(db, COLLECTIONS.ROLE_CAPACITIES));
+    return snapshot.docs.map(doc => doc.data() as RoleCapacity);
+};
+
+export const subscribeToRoleCapacities = (
+    callback: (capacities: RoleCapacity[]) => void
+): Unsubscribe | null => {
+    if (!isFirebaseConfigured()) return null;
+
+    return onSnapshot(collection(db, COLLECTIONS.ROLE_CAPACITIES), (snapshot) => {
+        const capacities = snapshot.docs.map(doc => doc.data() as RoleCapacity);
+        callback(capacities);
+    });
+};
+
 // Load full state from Firebase
 export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
     if (!isFirebaseConfigured()) {
@@ -293,7 +315,7 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
     }
 
     try {
-        const [participants, assignments, clinicDays, flowRates, shiftActuals, patientRecords, pharmacyItems] = await Promise.all([
+        const [participants, assignments, clinicDays, flowRates, shiftActuals, patientRecords, pharmacyItems, roleCapacities] = await Promise.all([
             getAllParticipants(),
             getAllAssignments(),
             getAllClinicDays(),
@@ -301,6 +323,7 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
             getAllShiftActuals(),
             getAllPatientRecords(),
             getAllPharmacyItems(),
+            getAllRoleCapacities(),
         ]);
 
         return {
@@ -311,6 +334,7 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
             shiftActuals,
             patientRecords,
             pharmacyItems,
+            roleCapacities,
             roles: ROLES,
             shifts: SHIFTS,
         };
