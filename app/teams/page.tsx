@@ -295,26 +295,19 @@ export default function TeamsPage() {
                                                     <div className="space-y-2">
                                                         {medications.map((med, index) => (
                                                             <div key={index} className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-center">
-                                                                <input
-                                                                    type="text"
+                                                                <MedicationAutocomplete
                                                                     value={med.name}
-                                                                    onChange={(e) => {
-                                                                        const val = e.target.value;
-                                                                        // Auto-capitalize first letter
-                                                                        const capitalized = val.charAt(0).toUpperCase() + val.slice(1);
-                                                                        updateMedication(index, 'name', capitalized);
+                                                                    onChange={(val) => {
+                                                                        // Check for auto-capitalization if needed, though component handles selection
+                                                                        // Standardizing on Title Case if user types manually
+                                                                        const capitalized = val.length < 2 ? val.toUpperCase() : val;
+                                                                        // Actually let's trust the autocomplete for selection, but maintain capitalization for typing
+                                                                        updateMedication(index, 'name', val);
                                                                     }}
                                                                     placeholder="Drug"
-                                                                    list={`pharmacy-items-${index}`}
+                                                                    pharmacyItems={state.pharmacyItems}
                                                                     className="w-full p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] focus:border-blue-500 focus:outline-none"
                                                                 />
-                                                                <datalist id={`pharmacy-items-${index}`}>
-                                                                    {state.pharmacyItems.map(item => (
-                                                                        <option key={item.id} value={item.name}>
-                                                                            {item.name} ({item.stockCount} in stock)
-                                                                        </option>
-                                                                    ))}
-                                                                </datalist>
                                                                 <input
                                                                     type="text"
                                                                     value={med.dose}
