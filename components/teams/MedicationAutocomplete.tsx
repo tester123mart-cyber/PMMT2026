@@ -110,16 +110,18 @@ export default function MedicationAutocomplete({
                             onClick={() => selectItem(item)}
                             onMouseEnter={() => setHighlightedIndex(index)}
                             className={`px-3 py-1.5 cursor-pointer flex justify-between items-center transition-colors ${index === highlightedIndex
-                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                                 }`}
                         >
-                            <span className="font-medium truncate mr-2">{item.name}</span>
+                            <span className="font-medium truncate mr-2">
+                                {item.name} <span className="text-[var(--text-secondary)] font-normal ml-1">{/^\d+$/.test(item.dosage) ? `${item.dosage}mg` : item.dosage}</span>
+                            </span>
                             <span className={`text-xs whitespace-nowrap px-1.5 py-0.5 rounded border border-opacity-20 ${item.stockCount > 0
-                                    ? 'bg-green-100/50 text-green-700 border-green-500'
-                                    : 'bg-red-100/50 text-red-700 border-red-500'
+                                ? 'bg-green-100/50 text-green-700 border-green-500'
+                                : 'bg-red-100/50 text-red-700 border-red-500'
                                 }`}>
-                                {item.stockCount} stk
+                                {item.stockCount} stock
                             </span>
                         </li>
                     ))}

@@ -7,6 +7,7 @@ import { PatientRecord, MedicationEntry } from '@/lib/types';
 import { addPatientRecord, updatePharmacyItem } from '@/lib/firebaseService';
 import { generateId } from '@/lib/storage';
 import PharmacyStocktake from '@/components/teams/PharmacyStocktake';
+import MedicationAutocomplete from '@/components/teams/MedicationAutocomplete';
 
 
 
