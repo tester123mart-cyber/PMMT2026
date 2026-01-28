@@ -213,18 +213,23 @@ export default function ParticipantDashboard() {
                         })}
                     </div>
 
-                    {/* Role Selector */}
-                    {selectedShiftId && selectedClinicDay ? (
-                        <RoleSelector
-                            clinicDayId={selectedClinicDay.id}
-                            shiftId={selectedShiftId}
-                            onClose={() => setSelectedShiftId(null)}
-                        />
-                    ) : (
-                        <div className="p-4 rounded-lg bg-[var(--bg-secondary)] text-center text-sm text-[var(--text-muted)]">
-                            Select a shift to choose your role
-                        </div>
-                    )}
+                    {/* Role Selector - Fixed height container to prevent scroll bounce */}
+                    <div id="role-selector-area" className="min-h-[200px]">
+                        {selectedShiftId && selectedClinicDay ? (
+                            <RoleSelector
+                                clinicDayId={selectedClinicDay.id}
+                                shiftId={selectedShiftId}
+                                onClose={() => setSelectedShiftId(null)}
+                            />
+                        ) : (
+                            <div className="p-6 rounded-xl bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-tertiary)] text-center border border-dashed border-[var(--border-subtle)]">
+                                <div className="text-3xl mb-2">👆</div>
+                                <p className="text-sm text-[var(--text-muted)]">
+                                    Tap a session above to choose your role
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </section>
             </main>
         </div>
