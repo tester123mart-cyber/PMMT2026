@@ -75,8 +75,23 @@ export default function AdminPage() {
                     </p>
                 </div>
 
+                {/* System Status (Debug) */}
+                <div className="mb-8 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-xs font-mono">
+                    <div className="flex flex-wrap gap-4 justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <span className={state.clinicDays.length > 5 ? "text-green-500" : "text-amber-500"}>
+                                ●
+                            </span>
+                            <span>Data Source: {typeof window !== 'undefined' && localStorage.getItem('pmmt-logistics-app') ? 'Local + Sync' : 'Initializing...'}</span>
+                        </div>
+                        <div>
+                            Days: {state.clinicDays.length} | Parts: {state.participants.length}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Tabs */}
-                <div className="flex justify-center gap-4 mb-8">
+                <div className="flex overflow-x-auto pb-4 gap-4 mb-4 touch-pan-x snap-x">
                     {[
                         { id: 'clinic-days', label: 'Clinic Days', icon: '📅' },
                         { id: 'participants', label: 'Participants', icon: '👥' },
@@ -87,7 +102,7 @@ export default function AdminPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as typeof activeTab)}
                             className={`
-                                px-6 py-4 rounded-2xl font-medium transition-all flex flex-col items-center gap-1 min-w-[80px]
+                                px-6 py-3 rounded-2xl font-medium transition-all flex flex-col items-center gap-1 min-w-[100px] flex-shrink-0 snap-start
                                 ${activeTab === tab.id
                                     ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105'
                                     : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-subtle)]'
@@ -95,7 +110,7 @@ export default function AdminPage() {
                             `}
                         >
                             <span className="text-xl">{tab.icon}</span>
-                            <span className="text-xs">{tab.label}</span>
+                            <span className="text-xs whitespace-nowrap">{tab.label}</span>
                         </button>
                     ))}
                 </div>
@@ -157,18 +172,23 @@ function ClinicDaysTab() {
     const handleAddDay = async () => {
         if (!newDayName || !newDayDate) return;
 
-        const newClinicDay: ClinicDay = {
-            id: `day-${Date.now()}`,
-            name: newDayName,
-            date: newDayDate,
-            isActive: false,
-            patientTicketsIssued: 0,
-        };
+        try {
+            const newClinicDay: ClinicDay = {
+                id: `day-${Date.now()}`,
+                name: newDayName,
+                date: newDayDate,
+                isActive: false,
+                patientTicketsIssued: 0,
+            };
 
-        await addClinicDay(newClinicDay);
-        setNewDayName('');
-        setNewDayDate('');
-        setShowAddForm(false);
+            await addClinicDay(newClinicDay);
+            setNewDayName('');
+            setNewDayDate('');
+            setShowAddForm(false);
+        } catch (error) {
+            console.error('Failed to add clinic day:', error);
+            alert('Failed to save clinic day. Please check console for details.');
+        }
     };
 
     const handleDeleteDay = async (dayId: string) => {

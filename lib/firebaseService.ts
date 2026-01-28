@@ -33,6 +33,16 @@ const COLLECTIONS = {
 
 // Check if Firebase is configured
 export const isFirebaseConfigured = (): boolean => {
+    // Debug logging
+    if (typeof window !== 'undefined' && !(window as any)._firebaseLogged) {
+        console.log('Checking Firebase Config:', {
+            hasKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            hasProject: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            keyValid: process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'your-api-key-here'
+        });
+        (window as any)._firebaseLogged = true;
+    }
+
     return !!(
         process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
@@ -172,13 +182,29 @@ export const getAllClinicDays = async (): Promise<ClinicDay[]> => {
 };
 
 export const addClinicDay = async (clinicDay: ClinicDay): Promise<void> => {
-    if (!isFirebaseConfigured()) return;
-    await setDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDay.id), clinicDay);
+    if (!isFirebaseConfigured()) {
+        console.warn('Firebase not configured, cannot add clinic day:', clinicDay.name);
+        return;
+    }
+
+    try {
+        console.log('Adding clinic day to Firebase:', clinicDay.id);
+        await setDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDay.id), clinicDay);
+        console.log('Successfully added clinic day');
+    } catch (error) {
+        console.error('Error adding clinic day:', error);
+        throw error; // Re-throw so UI can handle it
+    }
 };
 
 export const updateClinicDay = async (clinicDay: ClinicDay): Promise<void> => {
     if (!isFirebaseConfigured()) return;
-    await setDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDay.id), clinicDay);
+    try {
+        await setDoc(doc(db, COLLECTIONS.CLINIC_DAYS, clinicDay.id), clinicDay);
+    } catch (error) {
+        console.error('Error updating clinic day:', error);
+        throw error;
+    }
 };
 
 export const removeClinicDay = async (clinicDayId: string): Promise<void> => {
