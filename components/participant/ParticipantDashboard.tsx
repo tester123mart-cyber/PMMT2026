@@ -58,44 +58,78 @@ export default function ParticipantDashboard() {
                             <p className="text-sm text-[var(--text-muted)] mt-1">Select a shift below to sign up for a role.</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
-                            {allAssignments.map(assignment => {
-                                const role = getRoleDetails(assignment.roleId);
-                                const shift = getShiftDetails(assignment.shiftId);
-                                const clinicDay = getClinicDayDetails(assignment.clinicDayId);
+                        <div className="space-y-6">
+                            {/* Group assignments by Clinic Day */}
+                            {Array.from(new Set(allAssignments.map(a => a.clinicDayId)))
+                                .sort()
+                                .map(dayId => {
+                                    const dayAssignments = allAssignments.filter(a => a.clinicDayId === dayId);
+                                    const day = getClinicDayDetails(dayId);
 
-                                return (
-                                    <div
-                                        key={assignment.id}
-                                        className="group p-4 rounded-xl bg-gradient-to-r from-[var(--bg-secondary)] to-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-blue-500/30 transition-all"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                                                    <span className="text-2xl">{role?.icon}</span>
-                                                </div>
-                                                <div>
-                                                    <div className="font-semibold text-[var(--text-primary)] text-lg">{role?.name}</div>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 font-medium">
-                                                            {clinicDay?.name}
-                                                        </span>
-                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-medium">
-                                                            {shift?.name}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                    // Dynamic Color Palette for Clinic Days
+                                    const getDayColor = (name: string = '') => {
+                                        if (name.includes('1')) return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                                        if (name.includes('2')) return 'bg-violet-50 text-violet-800 border-violet-200';
+                                        if (name.includes('3')) return 'bg-cyan-50 text-cyan-800 border-cyan-200';
+                                        if (name.includes('4')) return 'bg-amber-50 text-amber-800 border-amber-200';
+                                        if (name.includes('5')) return 'bg-rose-50 text-rose-800 border-rose-200';
+                                        return 'bg-gray-50 text-gray-800 border-gray-200';
+                                    };
+
+                                    const dayTheme = getDayColor(day?.name);
+
+                                    return (
+                                        <div key={dayId} className="space-y-3">
+                                            {/* Day Header */}
+                                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border w-fit ${dayTheme}`}>
+                                                <span className="text-xs font-bold uppercase tracking-wider">{day?.name}</span>
+                                                <span className="text-xs opacity-70">|</span>
+                                                <span className="text-xs font-medium">{day ? formatDate(day.date) : ''}</span>
                                             </div>
-                                            <button
-                                                onClick={() => removeAssignment(assignment.id)}
-                                                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
-                                            >
-                                                Remove
-                                            </button>
+
+                                            {/* Assignments for this Day */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {dayAssignments.map(assignment => {
+                                                    const role = getRoleDetails(assignment.roleId);
+                                                    const shift = getShiftDetails(assignment.shiftId);
+
+                                                    return (
+                                                        <div
+                                                            key={assignment.id}
+                                                            className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-blue-500/30 transition-all group"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-lg bg-[var(--bg-tertiary)] flex items-center justify-center text-lg">
+                                                                    {role?.icon}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-semibold text-sm text-[var(--text-primary)]">{role?.name}</div>
+                                                                    <div className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md w-fit mt-0.5 border ${shift?.id === 'morning1'
+                                                                            ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
+                                                                            : shift?.id === 'morning2'
+                                                                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                                                                : shift?.id === 'afternoon'
+                                                                                    ? 'bg-slate-100 text-slate-700 border-slate-200'
+                                                                                    : 'bg-gray-50 text-gray-700 border-gray-200'
+                                                                        }`}>
+                                                                        {shift?.name}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => removeAssignment(assignment.id)}
+                                                                className="w-6 h-6 flex items-center justify-center rounded-full text-red-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                                                title="Remove Assignment"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
                         </div>
                     )}
                 </section>
