@@ -9,9 +9,18 @@ interface StaffingGridProps {
     clinicDayId: string;
 }
 
+interface SelectedCell {
+    roleId: string;
+    shiftId: ShiftId;
+    roleName: string;
+    roleIcon: string;
+    shiftName: string;
+}
+
 export default function StaffingGrid({ clinicDayId }: StaffingGridProps) {
     const { state, updateRoleCapacity } = useApp();
-    const [expandedCell, setExpandedCell] = useState<string | null>(null);
+    const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
+    const [tempCapacity, setTempCapacity] = useState<string>('');
 
     const statuses = getAllRoleShiftStatuses(state, clinicDayId);
 
@@ -41,167 +50,234 @@ export default function StaffingGrid({ clinicDayId }: StaffingGridProps) {
         });
     };
 
-    const toggleExpand = (cellKey: string) => {
-        setExpandedCell(expandedCell === cellKey ? null : cellKey);
+    const openModal = (role: { id: string; name: string; icon: string }, shift: { id: ShiftId; name: string }) => {
+        const status = getStatusForCell(role.id, shift.id);
+        setSelectedCell({
+            roleId: role.id,
+            shiftId: shift.id,
+            roleName: role.name,
+            roleIcon: role.icon,
+            shiftName: shift.name,
+        });
+        setTempCapacity(status?.capacity.toString() || '2');
     };
 
+    const closeModal = () => {
+        setSelectedCell(null);
+        setTempCapacity('');
+    };
+
+    const saveCapacity = () => {
+        if (selectedCell && tempCapacity) {
+            const val = parseInt(tempCapacity);
+            if (!isNaN(val) && val >= 0) {
+                handleUpdateCapacity(selectedCell.roleId, selectedCell.shiftId, val);
+            }
+        }
+        closeModal();
+    };
+
+    const selectedStatus = selectedCell ? getStatusForCell(selectedCell.roleId, selectedCell.shiftId) : null;
+
     return (
-        <div className="glass-card overflow-hidden">
-            {/* Desktop Grid View */}
-            <div className="hidden md:block overflow-x-auto">
-                <div className="grid-staffing">
-                    {/* Header Row */}
-                    <div className="grid-staffing-cell grid-staffing-header">Role</div>
-                    {SHIFTS.map(shift => (
-                        <div key={shift.id} className="grid-staffing-cell grid-staffing-header">
-                            <div className="text-center">
-                                <div>{shift.name.replace(' Shift', '')}</div>
-                                <div className="text-xs opacity-75">{shift.startTime}-{shift.endTime}</div>
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Role Rows */}
-                    {state.roles.map(role => (
-                        <>
-                            <div key={`${role.id}-label`} className="grid-staffing-cell grid-staffing-role">
-                                <span className="text-xl">{role.icon}</span>
-                                <div>
-                                    <div className="leading-tight">{role.name}</div>
+        <>
+            <div className="glass-card overflow-hidden">
+                {/* Desktop Grid View */}
+                <div className="hidden md:block overflow-x-auto">
+                    <div className="grid-staffing">
+                        {/* Header Row */}
+                        <div className="grid-staffing-cell grid-staffing-header">Role</div>
+                        {SHIFTS.map(shift => (
+                            <div key={shift.id} className="grid-staffing-cell grid-staffing-header">
+                                <div className="text-center">
+                                    <div>{shift.name.replace(' Shift', '')}</div>
+                                    <div className="text-xs opacity-75">{shift.startTime}-{shift.endTime}</div>
                                 </div>
                             </div>
-                            {SHIFTS.map(shift => {
-                                const status = getStatusForCell(role.id, shift.id);
-                                const cellKey = `${role.id}-${shift.id}`;
-                                const isExpanded = expandedCell === cellKey;
+                        ))}
 
-                                return (
-                                    <div
-                                        key={cellKey}
-                                        className={`grid-staffing-cell ${getCellColor(role.id, shift.id)} cursor-pointer hover:opacity-80 transition-opacity relative`}
-                                        onClick={() => toggleExpand(cellKey)}
-                                    >
-                                        <div className="text-center">
-                                            <div className="font-bold text-lg">
-                                                {status?.currentCount ?? 0}
-                                                <span className="text-sm font-normal opacity-70">/{status?.capacity}</span>
-                                            </div>
-                                            {status?.isFull && (
-                                                <span className="text-xs text-green-400">Full</span>
-                                            )}
-                                        </div>
-
-                                        {/* Expanded View (People + Capacity Edit) */}
-                                        {isExpanded && status && (
-                                            <div
-                                                className="absolute top-full left-0 right-0 z-20 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-b-lg p-3 shadow-xl min-w-[200px]"
-                                                onClick={e => e.stopPropagation()}
-                                                style={{ left: '50%', transform: 'translateX(-50%)' }}
-                                            >
-                                                {/* Capacity Editor */}
-                                                <div className="mb-3 pb-2 border-b border-[var(--border-subtle)]">
-                                                    <label className="text-xs text-[var(--text-muted)] block mb-1">
-                                                        Capacity Limit
-                                                    </label>
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            className="input-field py-1 px-2 text-sm w-16 text-center"
-                                                            defaultValue={status.capacity}
-                                                            onBlur={(e) => {
-                                                                const val = parseInt(e.target.value);
-                                                                if (!isNaN(val) && val >= 0) {
-                                                                    handleUpdateCapacity(role.id, shift.id, val);
-                                                                }
-                                                            }}
-                                                            onKeyDown={(e) => {
-                                                                if (e.key === 'Enter') {
-                                                                    const val = parseInt(e.currentTarget.value);
-                                                                    if (!isNaN(val) && val >= 0) {
-                                                                        handleUpdateCapacity(role.id, shift.id, val);
-                                                                        e.currentTarget.blur();
-                                                                    }
-                                                                }
-                                                            }}
-                                                        />
-                                                        <span className="text-[10px] text-[var(--text-muted)]">
-                                                            (Default: {role.capacityPerShift})
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="text-xs text-[var(--text-muted)] mb-1">
-                                                    Assigned ({status.participants.length}):
-                                                </div>
-                                                {status.participants.length > 0 ? (
-                                                    <div className="space-y-1 max-h-[150px] overflow-y-auto">
-                                                        {status.participants.map(p => (
-                                                            <div key={p.id} className="text-sm text-[var(--text-secondary)] truncate">
-                                                                {p.name}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-xs text-[var(--text-muted)] italic">
-                                                        No assignments yet
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                        {/* Role Rows */}
+                        {state.roles.map(role => (
+                            <>
+                                <div key={`${role.id}-label`} className="grid-staffing-cell grid-staffing-role">
+                                    <span className="text-xl">{role.icon}</span>
+                                    <div>
+                                        <div className="leading-tight">{role.name}</div>
                                     </div>
-                                );
-                            })}
-                        </>
-                    ))}
-                </div>
-            </div>
-
-            {/* Mobile List View - Update to show capacity */}
-            <div className="md:hidden">
-                {state.roles.map(role => (
-                    <div key={role.id} className="border-b border-[var(--border-subtle)] last:border-0">
-                        <div className="p-4">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl">{role.icon}</span>
-                                    <span className="font-medium">{role.name}</span>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
                                 {SHIFTS.map(shift => {
                                     const status = getStatusForCell(role.id, shift.id);
+
                                     return (
                                         <div
-                                            key={shift.id}
-                                            className={`p-2 rounded-lg text-center ${getCellColor(role.id, shift.id)}`}
-                                            onClick={() => {
-                                                // Simple prompt for mobile for now, or just toggle expandable
-                                                // Implementing prompt for simplicity in this iteration
-                                                const newCap = prompt(`Set capacity for ${role.name} - ${shift.name}`, status?.capacity.toString());
-                                                if (newCap !== null) {
-                                                    const val = parseInt(newCap);
-                                                    if (!isNaN(val) && val >= 0) {
-                                                        handleUpdateCapacity(role.id, shift.id, val);
-                                                    }
-                                                }
-                                            }}
+                                            key={`${role.id}-${shift.id}`}
+                                            className={`grid-staffing-cell ${getCellColor(role.id, shift.id)} cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-200 active:scale-95`}
+                                            onClick={() => openModal(role, shift)}
                                         >
-                                            <div className="text-xs text-[var(--text-muted)] mb-1">
-                                                {shift.name.split(' ')[0]}
-                                            </div>
-                                            <div className="font-bold">
-                                                {status?.currentCount ?? 0}
-                                                <span className="opacity-70 text-xs">/{status?.capacity}</span>
+                                            <div className="text-center">
+                                                <div className="font-bold text-lg">
+                                                    {status?.currentCount ?? 0}
+                                                    <span className="text-sm font-normal opacity-70">/{status?.capacity}</span>
+                                                </div>
+                                                {status?.isFull && (
+                                                    <span className="text-xs text-green-400">Full</span>
+                                                )}
                                             </div>
                                         </div>
                                     );
                                 })}
+                            </>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Mobile List View */}
+                <div className="md:hidden">
+                    {state.roles.map(role => (
+                        <div key={role.id} className="border-b border-[var(--border-subtle)] last:border-0">
+                            <div className="p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">{role.icon}</span>
+                                        <span className="font-medium">{role.name}</span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {SHIFTS.map(shift => {
+                                        const status = getStatusForCell(role.id, shift.id);
+                                        return (
+                                            <button
+                                                key={shift.id}
+                                                className={`p-3 rounded-xl text-center ${getCellColor(role.id, shift.id)} active:scale-95 transition-transform touch-manipulation`}
+                                                onClick={() => openModal(role, shift)}
+                                            >
+                                                <div className="text-xs text-[var(--text-muted)] mb-1">
+                                                    {shift.id === 'morning1' ? '1st' : shift.id === 'morning2' ? '2nd' : '3rd'}
+                                                </div>
+                                                <div className="font-bold text-lg">
+                                                    {status?.currentCount ?? 0}
+                                                    <span className="opacity-70 text-xs">/{status?.capacity}</span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
-        </div>
+
+            {/* Beautiful Modal */}
+            {selectedCell && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+                    onClick={closeModal}
+                >
+                    <div
+                        className="w-full max-w-sm bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-secondary)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] overflow-hidden animate-slide-up"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-[var(--border-subtle)]">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-3xl">{selectedCell.roleIcon}</span>
+                                    <div>
+                                        <div className="font-semibold text-[var(--text-primary)]">{selectedCell.roleName}</div>
+                                        <div className="text-sm text-[var(--text-muted)]">{selectedCell.shiftName}</div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={closeModal}
+                                    className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-4">
+                            {/* Capacity Editor */}
+                            <div className="mb-5">
+                                <label className="text-sm font-medium text-[var(--text-secondary)] mb-2 block">
+                                    📊 Capacity Limit
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setTempCapacity(Math.max(0, parseInt(tempCapacity) - 1).toString())}
+                                        className="w-12 h-12 rounded-xl bg-[var(--bg-tertiary)] text-xl font-bold hover:bg-red-500/20 hover:text-red-400 transition-colors"
+                                    >
+                                        −
+                                    </button>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="flex-1 h-12 text-center text-2xl font-bold bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        value={tempCapacity}
+                                        onChange={(e) => setTempCapacity(e.target.value)}
+                                    />
+                                    <button
+                                        onClick={() => setTempCapacity((parseInt(tempCapacity) + 1).toString())}
+                                        className="w-12 h-12 rounded-xl bg-[var(--bg-tertiary)] text-xl font-bold hover:bg-green-500/20 hover:text-green-400 transition-colors"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                <div className="text-xs text-[var(--text-muted)] mt-2 text-center">
+                                    Currently: {selectedStatus?.currentCount ?? 0} assigned
+                                </div>
+                            </div>
+
+                            {/* Assigned Participants */}
+                            <div>
+                                <label className="text-sm font-medium text-[var(--text-secondary)] mb-2 block">
+                                    👥 Assigned Participants ({selectedStatus?.participants.length ?? 0})
+                                </label>
+                                {selectedStatus && selectedStatus.participants.length > 0 ? (
+                                    <div className="bg-[var(--bg-secondary)] rounded-xl p-3 max-h-[180px] overflow-y-auto">
+                                        <div className="space-y-2">
+                                            {selectedStatus.participants.map(p => (
+                                                <div
+                                                    key={p.id}
+                                                    className="flex items-center gap-3 p-2 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-subtle)]"
+                                                >
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                                                        {p.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="text-sm text-[var(--text-primary)]">{p.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-[var(--bg-secondary)] rounded-xl p-6 text-center">
+                                        <div className="text-3xl mb-2">🙋</div>
+                                        <p className="text-sm text-[var(--text-muted)]">No one assigned yet</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-4 border-t border-[var(--border-subtle)] flex gap-3">
+                            <button
+                                onClick={closeModal}
+                                className="flex-1 py-3 rounded-xl bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-hover)] transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveCapacity}
+                                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium hover:opacity-90 transition-opacity shadow-lg"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
