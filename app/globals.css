@@ -73,6 +73,21 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
   min-height: 100vh;
+  /* Prevent scroll bounce on mobile */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll stabilization to prevent layout shift bouncing */
+main,
+.container {
+  overflow-anchor: auto;
+}
+
+/* Prevent content from causing scroll jumps */
+.scroll-stable {
+  overflow-anchor: none;
+  contain: layout;
 }
 
 /* Typography - All using Inter */

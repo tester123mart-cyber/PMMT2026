@@ -114,7 +114,7 @@ export default function RoleSelector({ clinicDayId, shiftId, onClose }: RoleSele
     }
 
     return (
-        <div className="glass-card p-4">
+        <div className="glass-card p-4 scroll-stable min-h-[300px]">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-[var(--text-primary)]">
                     Select Your Role
