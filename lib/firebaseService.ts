@@ -299,7 +299,12 @@ export const subscribeToClinicDays = (
 
     return onSnapshot(collection(db, COLLECTIONS.CLINIC_DAYS), (snapshot) => {
         const clinicDays = snapshot.docs.map(doc => doc.data() as ClinicDay);
-        callback(clinicDays);
+        if (clinicDays.length === 0) {
+            console.warn('Clinic days empty from Firebase, using defaults');
+            callback(DEFAULT_CLINIC_DAYS);
+        } else {
+            callback(clinicDays);
+        }
     });
 };
 
