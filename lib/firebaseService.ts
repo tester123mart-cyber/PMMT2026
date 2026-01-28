@@ -147,6 +147,10 @@ export const getAllParticipants = async (): Promise<Participant[]> => {
 export const addAssignment = async (assignment: Assignment): Promise<void> => {
     if (!isFirebaseConfigured()) {
         console.warn('Firebase not configured, cannot add assignment:', assignment.id);
+        // Make this visible to user on mobile!
+        if (typeof window !== 'undefined') {
+            alert('⚠️ Firebase not configured! Assignment will not persist. Check Vercel environment variables.');
+        }
         return;
     }
 
@@ -156,6 +160,10 @@ export const addAssignment = async (assignment: Assignment): Promise<void> => {
         console.log('Successfully added assignment');
     } catch (error) {
         console.error('Error adding assignment:', error);
+        // Make error visible on mobile
+        if (typeof window !== 'undefined') {
+            alert('❌ Firebase Error: ' + (error as Error).message);
+        }
         throw error;
     }
 };
