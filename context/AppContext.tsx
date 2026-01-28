@@ -34,7 +34,12 @@ type Action =
 function appReducer(state: AppState, action: Action): AppState {
     switch (action.type) {
         case 'LOAD_STATE':
-            return action.payload;
+            // Always ensure roles and shifts are from static constants, not from storage
+            return {
+                ...action.payload,
+                roles: ROLES,
+                shifts: SHIFTS,
+            };
 
         case 'LOGIN':
             return { ...state, currentUser: action.payload };
