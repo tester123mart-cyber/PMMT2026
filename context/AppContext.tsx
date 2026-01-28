@@ -339,8 +339,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Add assignment helper
     const addAssignment = async (clinicDayId: string, shiftId: ShiftId, roleId: string): Promise<boolean> => {
-        if (!state.currentUser) return false;
-        if (isRoleFull(clinicDayId, shiftId, roleId)) return false;
+        if (!state.currentUser) {
+            console.warn('Cannot add assignment: No current user');
+            return false;
+        }
+        if (isRoleFull(clinicDayId, shiftId, roleId)) {
+            console.warn('Cannot add assignment: Role is full');
+            return false;
+        }
 
         // Check if already assigned to this shift
         const existing = state.assignments.find(
@@ -348,7 +354,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 a.shiftId === shiftId &&
                 a.participantId === state.currentUser?.id
         );
-        if (existing) return false;
+        if (existing) {
+            console.warn('Cannot add assignment: Already assigned to this shift');
+            return false;
+        }
 
         const newAssignment: Assignment = {
             id: generateId(),
@@ -359,17 +368,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
             createdAt: new Date().toISOString(),
         };
 
-        if (isFirebaseEnabled) {
+        // Always try to save to Firebase (check config directly, not cached value)
+        try {
+            console.log('Saving assignment to Firebase:', newAssignment.id);
             await firebaseService.addAssignment(newAssignment);
+            console.log('Assignment saved successfully');
+        } catch (error) {
+            console.error('Failed to save assignment to Firebase:', error);
+            // Still update local state even if Firebase fails
         }
+
         dispatch({ type: 'ADD_ASSIGNMENT', payload: newAssignment });
         return true;
     };
 
     // Remove assignment helper
     const removeAssignment = async (assignmentId: string): Promise<void> => {
-        if (isFirebaseEnabled) {
+        // Always try to remove from Firebase
+        try {
+            console.log('Removing assignment from Firebase:', assignmentId);
             await firebaseService.removeAssignment(assignmentId);
+            console.log('Assignment removed successfully');
+        } catch (error) {
+            console.error('Failed to remove assignment from Firebase:', error);
         }
         dispatch({ type: 'REMOVE_ASSIGNMENT', payload: assignmentId });
     };
