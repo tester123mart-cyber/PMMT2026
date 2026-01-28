@@ -442,8 +442,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     const updateRoleCapacity = async (capacity: RoleCapacity): Promise<void> => {
-        if (isFirebaseEnabled) {
+        // Always try to save to Firebase (not using cached isFirebaseEnabled)
+        try {
+            console.log('Saving role capacity to Firebase:', capacity.roleId, capacity.shiftId);
             await firebaseService.updateRoleCapacity(capacity);
+            console.log('Role capacity saved successfully');
+        } catch (error) {
+            console.error('Failed to save role capacity to Firebase:', error);
         }
         dispatch({ type: 'UPDATE_ROLE_CAPACITY_ITEM', payload: capacity });
     };

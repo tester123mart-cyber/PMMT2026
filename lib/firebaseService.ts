@@ -393,8 +393,19 @@ export const getAllPharmacyItems = async (): Promise<PharmacyItem[]> => {
 
 // Role Capacity operations
 export const updateRoleCapacity = async (capacity: RoleCapacity): Promise<void> => {
-    if (!isFirebaseConfigured()) return;
-    await setDoc(doc(db, COLLECTIONS.ROLE_CAPACITIES, capacity.id), capacity);
+    if (!isFirebaseConfigured()) {
+        console.warn('Firebase not configured, cannot update role capacity:', capacity.roleId);
+        return;
+    }
+
+    try {
+        console.log('Writing role capacity to Firebase:', capacity.id);
+        await setDoc(doc(db, COLLECTIONS.ROLE_CAPACITIES, capacity.id), capacity);
+        console.log('Role capacity written successfully');
+    } catch (error) {
+        console.error('Error writing role capacity:', error);
+        throw error;
+    }
 };
 
 export const getAllRoleCapacities = async (): Promise<RoleCapacity[]> => {
