@@ -105,12 +105,12 @@ export default function ParticipantDashboard() {
                                                                 <div>
                                                                     <div className="font-semibold text-sm text-[var(--text-primary)]">{role?.name}</div>
                                                                     <div className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md w-fit mt-0.5 border ${shift?.id === 'morning1'
-                                                                            ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
-                                                                            : shift?.id === 'morning2'
-                                                                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                                                                : shift?.id === 'afternoon'
-                                                                                    ? 'bg-slate-100 text-slate-700 border-slate-200'
-                                                                                    : 'bg-gray-50 text-gray-700 border-gray-200'
+                                                                        ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
+                                                                        : shift?.id === 'morning2'
+                                                                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                                                            : shift?.id === 'afternoon'
+                                                                                ? 'bg-slate-100 text-slate-700 border-slate-200'
+                                                                                : 'bg-gray-50 text-gray-700 border-gray-200'
                                                                         }`}>
                                                                         {shift?.name}
                                                                     </div>
@@ -169,8 +169,8 @@ export default function ParticipantDashboard() {
                         Select Shift for {selectedClinicDay?.name || 'Selected Day'}
                     </h2>
 
-                    {/* Shift buttons */}
-                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                    {/* Shift buttons - Mobile optimized */}
+                    <div className="grid grid-cols-3 gap-3 mb-6">
                         {SHIFTS.map(shift => {
                             const isSelected = selectedShiftId === shift.id;
                             const hasAssignment = selectedDayAssignments.some(a => a.shiftId === shift.id);
@@ -180,19 +180,34 @@ export default function ParticipantDashboard() {
                                     key={shift.id}
                                     onClick={() => setSelectedShiftId(shift.id)}
                                     className={`
-                                        flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all text-left sm:text-center
+                                        relative py-5 px-3 rounded-2xl text-center font-medium transition-all
+                                        min-h-[80px] active:scale-95 touch-manipulation
                                         ${isSelected
-                                            ? 'bg-blue-500 text-white'
+                                            ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-400/50'
                                             : hasAssignment
-                                                ? 'bg-green-500/10 text-green-600 border border-green-500/30'
-                                                : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                                                ? 'bg-green-50 text-green-700 border-2 border-green-400'
+                                                : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-subtle)] hover:border-blue-400 hover:shadow-md'
                                         }
                                     `}
                                 >
-                                    <div className="font-semibold">
-                                        {shift.id === 'afternoon' ? '🌅' : '☀️'} {shift.name.replace(' Shift', '')}
+                                    {/* Emoji Icon */}
+                                    <div className="text-2xl mb-1">
+                                        {shift.id === 'morning1' ? '🌅' : shift.id === 'morning2' ? '☀️' : '🌇'}
                                     </div>
-                                    {hasAssignment && <div className="text-xs mt-1 text-green-600 font-bold">✓ Assigned</div>}
+                                    {/* Session Number */}
+                                    <div className="text-lg font-bold">
+                                        {shift.id === 'morning1' ? '1st' : shift.id === 'morning2' ? '2nd' : '3rd'}
+                                    </div>
+                                    {/* Time Label */}
+                                    <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>
+                                        {shift.startTime}
+                                    </div>
+                                    {/* Assigned Badge */}
+                                    {hasAssignment && (
+                                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white text-xs shadow">
+                                            ✓
+                                        </div>
+                                    )}
                                 </button>
                             );
                         })}
