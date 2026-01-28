@@ -209,20 +209,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Load state on mount
     useEffect(() => {
         const initializeData = async () => {
-            if (isFirebaseEnabled) {
+            // Always try to load from Firebase first
+            try {
                 // Initialize default data in Firebase if needed
                 await firebaseService.initializeDefaultData();
 
-                // Load from Firebase
+                // Load from Firebase only - Firebase is the source of truth
                 const firebaseState = await firebaseService.loadStateFromFirebase();
+
+                // Get currentUser from localStorage (for session persistence)
                 const localState = loadState();
 
                 dispatch({
                     type: 'LOAD_STATE',
                     payload: {
-                        ...localState,
                         ...firebaseState,
-                        // currentUser: null, // REMOVED: Allow persistent login
+                        currentUser: localState.currentUser, // Preserve login session
                         roles: ROLES,
                         shifts: SHIFTS,
                     } as AppState,
@@ -254,15 +256,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 if (unsubPatientRecords) unsubscribeRefs.current.push(unsubPatientRecords);
                 if (unsubPharmacyItems) unsubscribeRefs.current.push(unsubPharmacyItems);
                 if (unsubRoleCapacities) unsubscribeRefs.current.push(unsubRoleCapacities);
-            } else {
-                // Fall back to localStorage
+            } catch (error) {
+                console.error('Error initializing from Firebase:', error);
+                // Last resort fallback to localStorage if Firebase completely fails
                 const loaded = loadState();
                 dispatch({
                     type: 'LOAD_STATE',
-                    payload: {
-                        ...loaded,
-                        // currentUser: null // REMOVED: Allow persistent login
-                    }
+                    payload: loaded
                 });
             }
         };
