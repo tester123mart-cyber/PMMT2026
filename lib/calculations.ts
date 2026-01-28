@@ -67,7 +67,7 @@ export const getRecommendedTickets = (state: AppState, clinicDayId: string): num
     return Math.floor(total * 1.05);
 };
 
-// Get role/shift status for staffing grid
+// Get role/shift status for staffing grid (with capacity override)
 export const getRoleShiftStatus = (
     state: AppState,
     clinicDayId: string,
@@ -83,7 +83,13 @@ export const getRoleShiftStatus = (
         .map(a => state.participants.find(p => p.id === a.participantId))
         .filter((p): p is NonNullable<typeof p> => p !== undefined);
 
-    const capacity = role?.capacityPerShift ?? 0;
+    // Check for a custom capacity override
+    const customCapacity = state.roleCapacities.find(
+        rc => rc.clinicDayId === clinicDayId && rc.shiftId === shiftId && rc.roleId === roleId
+    );
+
+    // Use custom capacity if it exists, otherwise fall back to the default role capacity
+    const capacity = customCapacity ? customCapacity.capacity : (role?.capacityPerShift ?? 0);
     const currentCount = assignments.length;
 
     return {
@@ -97,7 +103,7 @@ export const getRoleShiftStatus = (
     };
 };
 
-// Get all role/shift statuses for a clinic day (for staffing grid)
+// Get all role/shift statuses for a clinic day
 export const getAllRoleShiftStatuses = (
     state: AppState,
     clinicDayId: string

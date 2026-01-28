@@ -13,7 +13,7 @@ import {
     Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals, PatientRecord, PharmacyItem } from './types';
+import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals, PatientRecord, PharmacyItem, RoleCapacity } from './types';
 import { ROLES, SHIFTS, DEFAULT_CLINIC_DAYS, DEFAULT_FLOW_RATES, SAMPLE_PARTICIPANTS } from './data';
 import { generateId } from './storage';
 
@@ -26,6 +26,7 @@ const COLLECTIONS = {
     SHIFT_ACTUALS: 'shiftActuals',
     PATIENT_RECORDS: 'patientRecords',
     PHARMACY_ITEMS: 'pharmacyItems',
+    ROLE_CAPACITIES: 'roleCapacities',
     APP_CONFIG: 'appConfig',
 };
 
@@ -274,7 +275,9 @@ export const updatePharmacyItem = async (item: PharmacyItem): Promise<void> => {
     await setDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, item.id), item);
 };
 
-await deleteDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, itemId));
+export const removePharmacyItem = async (itemId: string): Promise<void> => {
+    if (!isFirebaseConfigured()) return;
+    await deleteDoc(doc(db, COLLECTIONS.PHARMACY_ITEMS, itemId));
 };
 
 export const getAllPharmacyItems = async (): Promise<PharmacyItem[]> => {

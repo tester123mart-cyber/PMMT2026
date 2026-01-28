@@ -181,7 +181,6 @@ interface AppContextType {
     updateClinicDay: (day: ClinicDay) => Promise<void>;
     removeClinicDay: (id: string) => Promise<void>;
     addParticipant: (participant: Participant) => Promise<void>;
-    addParticipant: (participant: Participant) => Promise<void>;
     updateParticipant: (participant: Participant) => Promise<void>;
     updateRoleCapacity: (capacity: RoleCapacity) => Promise<void>;
 }
@@ -199,7 +198,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         shifts: SHIFTS,
         flowRates: [],
         shiftActuals: [],
-        patientRecords: [],
         patientRecords: [],
         pharmacyItems: [],
         roleCapacities: [],
@@ -330,7 +328,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             a => a.clinicDayId === clinicDayId && a.shiftId === shiftId && a.roleId === roleId
         ).length;
 
-        return count >= role.capacityPerShift;
+        const customCapacity = state.roleCapacities.find(
+            rc => rc.clinicDayId === clinicDayId && rc.shiftId === shiftId && rc.roleId === roleId
+        );
+
+        const capacity = customCapacity ? customCapacity.capacity : role.capacityPerShift;
+
+        return count >= capacity;
     };
 
     // Add assignment helper
@@ -447,7 +451,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addClinicDay,
         updateClinicDay,
         removeClinicDay,
-        addParticipant,
         addParticipant,
         updateParticipant,
         updateRoleCapacity,

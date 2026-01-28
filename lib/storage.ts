@@ -156,7 +156,13 @@ export const isRoleShiftFull = (
     if (!role) return true;
 
     const count = getAssignmentCount(state, clinicDayId, shiftId, roleId);
-    return count >= role.capacityPerShift;
+
+    const customCapacity = state.roleCapacities.find(
+        rc => rc.clinicDayId === clinicDayId && rc.shiftId === shiftId && rc.roleId === roleId
+    );
+
+    const capacity = customCapacity ? customCapacity.capacity : role.capacityPerShift;
+    return count >= capacity;
 };
 
 // Clinic day helpers
