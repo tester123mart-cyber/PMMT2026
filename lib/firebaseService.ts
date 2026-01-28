@@ -418,11 +418,18 @@ export const getAllRoleCapacities = async (): Promise<RoleCapacity[]> => {
 export const subscribeToRoleCapacities = (
     callback: (capacities: RoleCapacity[]) => void
 ): Unsubscribe | null => {
-    if (!isFirebaseConfigured()) return null;
+    if (!isFirebaseConfigured()) {
+        console.warn('Firebase not configured, real-time role capacities sync disabled');
+        return null;
+    }
 
+    console.log('Setting up real-time role capacities listener...');
     return onSnapshot(collection(db, COLLECTIONS.ROLE_CAPACITIES), (snapshot) => {
         const capacities = snapshot.docs.map(doc => doc.data() as RoleCapacity);
+        console.log(`Real-time update: ${capacities.length} role capacities loaded`);
         callback(capacities);
+    }, (error) => {
+        console.error('Role capacities listener error:', error);
     });
 };
 
