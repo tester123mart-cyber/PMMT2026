@@ -295,11 +295,18 @@ export const getPatientRecordsByClinicDay = async (clinicDayId: string): Promise
 export const subscribeToAssignments = (
     callback: (assignments: Assignment[]) => void
 ): Unsubscribe | null => {
-    if (!isFirebaseConfigured()) return null;
+    if (!isFirebaseConfigured()) {
+        console.warn('Firebase not configured, real-time assignments sync disabled');
+        return null;
+    }
 
+    console.log('Setting up real-time assignments listener...');
     return onSnapshot(collection(db, COLLECTIONS.ASSIGNMENTS), (snapshot) => {
         const assignments = snapshot.docs.map(doc => doc.data() as Assignment);
+        console.log(`Real-time update: ${assignments.length} assignments`);
         callback(assignments);
+    }, (error) => {
+        console.error('Assignments listener error:', error);
     });
 };
 
