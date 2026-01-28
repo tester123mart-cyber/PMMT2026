@@ -1,7 +1,7 @@
 // PMMT Logistics App - Storage Layer
 
 import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals } from './types';
-import { ROLES, SHIFTS, DEFAULT_CLINIC_DAYS, DEFAULT_FLOW_RATES, SAMPLE_PARTICIPANTS } from './data';
+import { ROLES, SHIFTS, DEFAULT_CLINIC_DAYS, DEFAULT_FLOW_RATES, SAMPLE_PARTICIPANTS, SAMPLE_PHARMACY_ITEMS, SAMPLE_PATIENT_RECORDS } from './data';
 
 const STORAGE_KEY = 'pmmt-logistics-app';
 
@@ -15,8 +15,8 @@ export const getInitialState = (): AppState => ({
     shifts: SHIFTS,
     flowRates: DEFAULT_FLOW_RATES,
     shiftActuals: [],
-    patientRecords: [],
-    pharmacyItems: [],
+    patientRecords: SAMPLE_PATIENT_RECORDS, // Added sample patient records
+    pharmacyItems: SAMPLE_PHARMACY_ITEMS,   // Added sample pharmacy items
     roleCapacities: [],
 });
 

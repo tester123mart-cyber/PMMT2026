@@ -10,11 +10,12 @@ import {
     onSnapshot,
     query,
     where,
+    writeBatch,
     Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { AppState, Participant, Assignment, ClinicDay, FlowRate, ShiftActuals, PatientRecord, PharmacyItem, RoleCapacity } from './types';
-import { ROLES, SHIFTS, DEFAULT_CLINIC_DAYS, DEFAULT_FLOW_RATES, SAMPLE_PARTICIPANTS } from './data';
+import { ROLES, SHIFTS, DEFAULT_CLINIC_DAYS, DEFAULT_FLOW_RATES, SAMPLE_PARTICIPANTS, SAMPLE_PHARMACY_ITEMS, SAMPLE_PATIENT_RECORDS } from './data';
 import { generateId } from './storage';
 
 // Collection names
@@ -67,6 +68,34 @@ export const initializeDefaultData = async (): Promise<void> => {
             for (const rate of DEFAULT_FLOW_RATES) {
                 await setDoc(doc(db, COLLECTIONS.FLOW_RATES, rate.roleId), rate);
             }
+        }
+
+        // Add sample pharmacy items
+        const pharmacySnap = await getDocs(collection(db, COLLECTIONS.PHARMACY_ITEMS));
+        // Force seed if empty OR if we want to guarantee sample data presence (e.g. for testing)
+        // Using upsert approach to ensure sample data exists
+        if (pharmacySnap.empty || true) { // Force check/add
+            console.log("Seeding Pharmacy Items...");
+            const pharmacyBatch = writeBatch(db);
+            // We'll read current items to avoid overwriting if possible, but user asked for "rerun".
+            // Let's just write them.
+            for (const item of SAMPLE_PHARMACY_ITEMS) {
+                const itemRef = doc(db, COLLECTIONS.PHARMACY_ITEMS, item.id);
+                pharmacyBatch.set(itemRef, item);
+            }
+            await pharmacyBatch.commit();
+        }
+
+        // Add sample patient records
+        const recordsSnap = await getDocs(collection(db, COLLECTIONS.PATIENT_RECORDS));
+        if (recordsSnap.empty || true) { // Force check/add
+            console.log("Seeding Patient Records...");
+            const recordsBatch = writeBatch(db);
+            for (const record of SAMPLE_PATIENT_RECORDS) {
+                const recordRef = doc(db, COLLECTIONS.PATIENT_RECORDS, record.id);
+                recordsBatch.set(recordRef, record);
+            }
+            await recordsBatch.commit();
         }
     } catch (error) {
         console.error('Error initializing default data:', error);
@@ -191,20 +220,26 @@ export const addPatientRecord = async (record: PatientRecord): Promise<void> => 
 };
 
 export const getAllPatientRecords = async (): Promise<PatientRecord[]> => {
-    if (!isFirebaseConfigured()) return [];
+    if (!isFirebaseConfigured()) return SAMPLE_PATIENT_RECORDS;
 
     const snapshot = await getDocs(collection(db, COLLECTIONS.PATIENT_RECORDS));
+    if (snapshot.empty) return SAMPLE_PATIENT_RECORDS;
     return snapshot.docs.map(doc => doc.data() as PatientRecord);
 };
 
 export const getPatientRecordsByClinicDay = async (clinicDayId: string): Promise<PatientRecord[]> => {
-    if (!isFirebaseConfigured()) return [];
+    if (!isFirebaseConfigured()) {
+        return SAMPLE_PATIENT_RECORDS.filter(r => r.clinicDayId === clinicDayId);
+    }
 
     const q = query(
         collection(db, COLLECTIONS.PATIENT_RECORDS),
         where('clinicDayId', '==', clinicDayId)
     );
     const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        return SAMPLE_PATIENT_RECORDS.filter(r => r.clinicDayId === clinicDayId);
+    }
     return snapshot.docs.map(doc => doc.data() as PatientRecord);
 };
 
@@ -249,7 +284,11 @@ export const subscribeToPatientRecords = (
 
     return onSnapshot(collection(db, COLLECTIONS.PATIENT_RECORDS), (snapshot) => {
         const records = snapshot.docs.map(doc => doc.data() as PatientRecord);
-        callback(records);
+        if (records.length === 0) {
+            callback(SAMPLE_PATIENT_RECORDS);
+        } else {
+            callback(records);
+        }
     });
 };
 
@@ -260,7 +299,11 @@ export const subscribeToPharmacyItems = (
 
     return onSnapshot(collection(db, COLLECTIONS.PHARMACY_ITEMS), (snapshot) => {
         const items = snapshot.docs.map(doc => doc.data() as PharmacyItem);
-        callback(items);
+        if (items.length === 0) {
+            callback(SAMPLE_PHARMACY_ITEMS);
+        } else {
+            callback(items);
+        }
     });
 };
 
@@ -281,9 +324,10 @@ export const removePharmacyItem = async (itemId: string): Promise<void> => {
 };
 
 export const getAllPharmacyItems = async (): Promise<PharmacyItem[]> => {
-    if (!isFirebaseConfigured()) return [];
+    if (!isFirebaseConfigured()) return SAMPLE_PHARMACY_ITEMS;
 
     const snapshot = await getDocs(collection(db, COLLECTIONS.PHARMACY_ITEMS));
+    if (snapshot.empty) return SAMPLE_PHARMACY_ITEMS;
     return snapshot.docs.map(doc => doc.data() as PharmacyItem);
 };
 
@@ -314,7 +358,19 @@ export const subscribeToRoleCapacities = (
 // Load full state from Firebase
 export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
     if (!isFirebaseConfigured()) {
-        return {};
+        console.warn('Firebase not configured, loading sample data');
+        return {
+            participants: SAMPLE_PARTICIPANTS,
+            assignments: [],
+            clinicDays: DEFAULT_CLINIC_DAYS,
+            flowRates: DEFAULT_FLOW_RATES,
+            shiftActuals: [],
+            patientRecords: SAMPLE_PATIENT_RECORDS,
+            pharmacyItems: SAMPLE_PHARMACY_ITEMS,
+            roleCapacities: [],
+            roles: ROLES,
+            shifts: SHIFTS,
+        };
     }
 
     try {
@@ -343,6 +399,19 @@ export const loadStateFromFirebase = async (): Promise<Partial<AppState>> => {
         };
     } catch (error) {
         console.error('Error loading state from Firebase:', error);
-        return {};
+        // Fallback to sample data on error (e.g. invalid keys, network issue)
+        console.warn('Falling back to sample data due to load error');
+        return {
+            participants: SAMPLE_PARTICIPANTS,
+            assignments: [],
+            clinicDays: DEFAULT_CLINIC_DAYS,
+            flowRates: DEFAULT_FLOW_RATES,
+            shiftActuals: [],
+            patientRecords: SAMPLE_PATIENT_RECORDS,
+            pharmacyItems: SAMPLE_PHARMACY_ITEMS,
+            roleCapacities: [],
+            roles: ROLES,
+            shifts: SHIFTS,
+        };
     }
 };

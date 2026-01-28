@@ -206,3 +206,103 @@ export const getRoleById = (roleId: string) => ROLES.find(r => r.id === roleId);
 
 // Helper to get shift by ID
 export const getShiftById = (shiftId: string) => SHIFTS.find(s => s.id === shiftId);
+
+export const SAMPLE_PHARMACY_ITEMS: import('./types').PharmacyItem[] = [
+    {
+        id: 'pharm-1',
+        name: 'Paracetamol',
+        category: 'Analgesics',
+        form: 'Tablets',
+        dosage: '500mg',
+        stockCount: 500,
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'pharm-2',
+        name: 'Amoxicillin',
+        category: 'Antimicrobials',
+        form: 'Capsules',
+        dosage: '500mg',
+        stockCount: 200,
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'pharm-3',
+        name: 'Ibuprofen',
+        category: 'Analgesics',
+        form: 'Tablets',
+        dosage: '400mg',
+        stockCount: 300,
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'pharm-4',
+        name: 'Multivitamins',
+        category: 'Vitamins & Supplements',
+        form: 'Tablets',
+        dosage: '1 tab',
+        stockCount: 1000,
+        updatedAt: new Date().toISOString(),
+    },
+    {
+        id: 'pharm-5',
+        name: 'Omeprazole',
+        category: 'GIT Medications',
+        form: 'Capsules',
+        dosage: '20mg',
+        stockCount: 150,
+        updatedAt: new Date().toISOString(),
+    },
+];
+
+export const SAMPLE_PATIENT_RECORDS: import('./types').PatientRecord[] = [
+    {
+        id: 'rec-1',
+        patientName: 'Juan Dela Cruz',
+        medications: [
+            {
+                name: 'Paracetamol',
+                dose: '500mg',
+                frequency: 'TID for 3 days',
+                pharmacyItemId: 'pharm-1',
+                deducted: true,
+            },
+            {
+                name: 'Amoxicillin',
+                dose: '500mg',
+                frequency: 'TID for 7 days',
+                pharmacyItemId: 'pharm-2',
+                deducted: true,
+            },
+        ],
+        followUps: 'Return if fever persists after 3 days',
+        comments: 'Patient presented with high fever and sore throat.',
+        createdAt: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+        createdBy: {
+            name: 'Dr. Smith',
+            email: 'dr.smith@example.com',
+        },
+        clinicDayId: 'day-1',
+    },
+    {
+        id: 'rec-2',
+        patientName: 'Maria Santos',
+        medications: [
+            {
+                name: 'Ibuprofen',
+                dose: '400mg',
+                frequency: 'PRN for pain',
+                pharmacyItemId: 'pharm-3',
+                deducted: true,
+            },
+        ],
+        followUps: 'None',
+        comments: 'Complaining of headache.',
+        createdAt: new Date().toISOString(),
+        createdBy: {
+            name: 'Nurse Joy',
+            email: 'joy@example.com',
+        },
+        clinicDayId: 'day-1',
+    },
+];
