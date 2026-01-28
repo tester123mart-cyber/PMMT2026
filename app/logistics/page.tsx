@@ -54,7 +54,7 @@ export default function LogisticsPage() {
                         <section className="section animate-fade-in">
                             <h2 className="section-title flex items-center gap-2">
                                 <span className="text-xl">👥</span>
-                                Staffing Overview
+                                Team Allocation
                             </h2>
                             {selectedClinicDayId && (
                                 <StaffingGrid clinicDayId={selectedClinicDayId} />

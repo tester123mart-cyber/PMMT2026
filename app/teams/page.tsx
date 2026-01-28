@@ -49,11 +49,14 @@ export default function TeamsPage() {
     const uniqueParticipants = [...new Set(selectedRoleAssignments.map(a => a.participantId))];
 
     // Sort roles: Clinical first (alphabetically), then Support (alphabetically)
-    const sortedRoles = [...state.roles].sort((a, b) => {
-        if (a.category === 'clinical' && b.category !== 'clinical') return -1;
-        if (a.category !== 'clinical' && b.category === 'clinical') return 1;
-        return a.name.localeCompare(b.name);
-    });
+    // Filter out 'sterilisation' as requested by user (only available for shift selection)
+    const sortedRoles = [...state.roles]
+        .filter(r => r.id !== 'sterilisation')
+        .sort((a, b) => {
+            if (a.category === 'clinical' && b.category !== 'clinical') return -1;
+            if (a.category !== 'clinical' && b.category === 'clinical') return 1;
+            return a.name.localeCompare(b.name);
+        });
 
     // Add medication row
     const addMedication = () => {

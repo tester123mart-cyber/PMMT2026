@@ -68,9 +68,6 @@ export default function StaffingGrid({ clinicDayId }: StaffingGridProps) {
                                 <span className="text-xl">{role.icon}</span>
                                 <div>
                                     <div className="leading-tight">{role.name}</div>
-                                    <div className="text-[10px] text-[var(--text-muted)] font-normal">
-                                        Def: {role.capacityPerShift}
-                                    </div>
                                 </div>
                             </div>
                             {SHIFTS.map(shift => {
@@ -170,7 +167,6 @@ export default function StaffingGrid({ clinicDayId }: StaffingGridProps) {
                                     <span className="text-2xl">{role.icon}</span>
                                     <span className="font-medium">{role.name}</span>
                                 </div>
-                                <span className="text-xs text-[var(--text-muted)]">Default: {role.capacityPerShift}</span>
                             </div>
                             <div className="grid grid-cols-3 gap-2">
                                 {SHIFTS.map(shift => {

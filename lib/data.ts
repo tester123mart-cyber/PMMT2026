@@ -111,6 +111,13 @@ export const ROLES: Role[] = [
         capacityPerShift: 4,
         icon: '💊',
     },
+    {
+        id: 'sterilisation',
+        name: 'Sterilisation',
+        category: 'support',
+        capacityPerShift: 2,
+        icon: '🧼',
+    },
 ];
 
 // Default clinic days (can be configured in admin)
