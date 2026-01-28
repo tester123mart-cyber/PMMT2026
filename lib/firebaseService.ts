@@ -145,13 +145,35 @@ export const getAllParticipants = async (): Promise<Participant[]> => {
 
 // Assignment operations
 export const addAssignment = async (assignment: Assignment): Promise<void> => {
-    if (!isFirebaseConfigured()) return;
-    await setDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignment.id), assignment);
+    if (!isFirebaseConfigured()) {
+        console.warn('Firebase not configured, cannot add assignment:', assignment.id);
+        return;
+    }
+
+    try {
+        console.log('Adding assignment to Firebase:', assignment.id);
+        await setDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignment.id), assignment);
+        console.log('Successfully added assignment');
+    } catch (error) {
+        console.error('Error adding assignment:', error);
+        throw error;
+    }
 };
 
 export const removeAssignment = async (assignmentId: string): Promise<void> => {
-    if (!isFirebaseConfigured()) return;
-    await deleteDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId));
+    if (!isFirebaseConfigured()) {
+        console.warn('Firebase not configured, cannot remove assignment:', assignmentId);
+        return;
+    }
+
+    try {
+        console.log('Removing assignment from Firebase:', assignmentId);
+        await deleteDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId));
+        console.log('Successfully removed assignment');
+    } catch (error) {
+        console.error('Error removing assignment:', error);
+        throw error;
+    }
 };
 
 export const getAllAssignments = async (): Promise<Assignment[]> => {
